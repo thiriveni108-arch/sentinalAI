@@ -131,6 +131,10 @@ def _statevector(values: Mapping[str, float], weights: Sequence[float] | None = 
 def quantum_kernel_similarity(left: Mapping[str, float], right: Mapping[str, float]) -> float:
     """Return the fidelity kernel |<phi(x)|phi(y)>|^2 in [0, 1]."""
 
+    # Fidelity is exactly reflexive. Avoid exposing harmless statevector
+    # round-off (for example 0.9999999999999998) as a mathematical violation.
+    if left == right:
+        return 1.0
     left_state = _statevector(left)
     right_state = _statevector(right)
     return float(np.clip(abs(np.vdot(left_state, right_state)) ** 2, 0.0, 1.0))

@@ -33,3 +33,9 @@ Public endpoints are `GET /api/mitre/catalog`, `GET /api/mitre/overview`, `GET /
 ## Graph Analysis
 
 Graph Analysis builds an in-memory typed graph from persisted employees, events, detections, and simulation runs, applies conservative correlation safeguards, and exposes summary, scoped subgraph, finding, entity, event, and run views without duplicating transactional data. Its page and production-risk boundary remain unchanged.
+
+## SHIELD advisory boundary
+
+`sentinel_ai.shield` is deliberately separate from the canonical risk pipeline and existing response service. Its deterministic demo graphs carry directed edge semantics, observed-versus-hypothetical evidence, asset sensitivity, and bounded traversal limits. Intervention coverage is derived from nodes and capabilities present on each enumerated path. Exact enumeration is the correctness oracle; greedy selection is the scalable baseline; QAOA is experimental and can only supply a recommendation after classical feasibility validation. Counterfactual simulation is pure and does not persist state or call containment adapters. Every high-impact recommendation requires analyst approval.
+
+SHIELD's QUBO uses an upper-triangular convention, `E(x)=sum(i<=j) Q[i,j] x_i x_j`. Each coverage constraint uses binary slack in `P(sum(cover)-1-slack)^2`; prerequisites use `P*x_i*(1-x_required)` and incompatibilities use `P*x_i*x_j`. The penalty exceeds the sum of all non-negative action costs. Conversion uses `x=(1-Z)/2`, including the accumulated linear fields from every quadratic coefficient. Qiskit's displayed measurement strings are reversed before action-variable decoding. An exhaustive independent semantic evaluator checks every bitstring for small demo instances and reports feasible versus penalty-violating encodings separately.

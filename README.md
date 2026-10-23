@@ -170,3 +170,33 @@ SentinelAI also provides an experimental **QAOA (Quantum Approximate Optimizatio
 - **QAOA Circuit**: Implements a depth-1 (or configurable depth) QAOA circuit to optimize the QUBO cost function.
 - **Advisory Only**: The optimization is purely advisory (`affectsProductionRisk: false`). It provides a ranked list of alerts and execution probabilities but does not execute automated containment or modify risk scores.
 - **Explainable Ranking**: The UI compares the classical deterministic ranking with the QAOA probabilistic ranking, providing contribution factor reasoning for every alert.
+
+## SHIELD Decision Engine
+
+SHIELD is a separate, advisory containment planner. It enumerates bounded, directed attack paths only across explicitly exploitable relationships; models reversible session, privilege, resource, export, device, and account interventions; and selects the least-disruptive combination that covers every enumerated critical path. The authoritative recommendation is always checked by the exact classical solver. Counterfactuals clone the modeled state and never invoke the existing response adapter.
+
+The containment QUBO uses an upper-triangular coefficient convention and binary slack variables for each hard path-coverage constraint. A depth-1 QAOA circuit runs on Qiskit Aer with deterministic simulator seeding. Measured candidates are decoded using Qiskit's little-endian convention and independently checked for prerequisites, compatibility, and complete path coverage. Invalid or unavailable quantum results fall back to the exact plan. No quantum advantage is claimed.
+
+```text
+GET /api/shield/scenarios
+GET /api/shield/scenarios/{credential-compromise|malicious-insider|multiple-routes}
+GET /api/shield/benchmark
+GET /api/shield/scenarios/{scenario_id}/quantum-experiment
+```
+
+Open `http://localhost:3000/shield` for the Decision Lab. The flagship `multiple-routes` scenario demonstrates why the individually cheapest action is rejected: two targeted controls (modeled cost 3) cover both independent routes, compared with broad account containment (cost 12).
+
+Run verification and the synthetic benchmark:
+
+```bash
+python -m pytest
+curl http://127.0.0.1:8000/api/shield/benchmark
+```
+
+Benchmark values are deterministic synthetic results, not deployment-performance claims. Path enumeration is bounded to depth 6 and 32 paths, and intervention effectiveness depends on the token and enforcement assumptions returned in each action.
+
+### Verified QAOA comparison
+
+Run the bounded six-trial matrix with `python scripts/benchmark_shield_qaoa.py multiple-routes`. It compares COBYLA and Powell, depth 1 and 2, 512 and 1,024 shots, three deterministic seeds, and fixed/ramp/random initializations. Parameter optimization uses exact statevector expectation; shots are reserved for final sampling. The reported quantum candidate is the lowest-cost classically feasible measured sample, not merely the most frequent sample.
+
+On the verified flagship run, all 256 eight-qubit bitstrings matched the independent semantic objective with zero energy mismatches. The six-trial matrix produced 100% trial-level feasibility, best and median feasible cost 3, approximation ratio 1.0, zero absolute and relative gap, and median runtime about 384 ms on the validation machine. Circuit depth was 16 for p=1 and 28 for p=2. These small simulated results demonstrate formulation correctness, not scaling or quantum advantage.

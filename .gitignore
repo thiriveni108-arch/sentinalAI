@@ -30,3 +30,6 @@ artifacts/reports/*
 !artifacts/reports/.gitkeep
 
 .DS_Store
+
+# Temporary test directories
+.test-tmp*

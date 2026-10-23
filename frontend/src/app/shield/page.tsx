@@ -1,0 +1,57 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { AlertTriangle, Atom, CheckCircle2, Route, ShieldCheck } from "lucide-react";
+
+export const metadata: Metadata = { title: "SHIELD Decision Lab" };
+type Params = Promise<Record<string, string | string[] | undefined>>;
+interface ShieldAction { action_id: string; action_type: string; explanation: string; interrupts: string[] }
+interface ShieldPath { path_id: string; criticality: number; nodes: string[]; observed_hops: number; hypothetical_hops: number; evidence: string[] }
+interface Counterfactual { label: string; feasible: boolean; disruptionCost: number; remainingExposure: number; explanation: string }
+interface ShieldResponse {
+  scenario: { name: string; summary: string; riskScore: number; threatClassification: string; affectedAssets: string[]; evidence: string[] };
+  recommendation: { businessDisruptionCost: number; selectedActions: ShieldAction[]; feasible: boolean; remainingCriticalPaths: string[] };
+  attackPaths: ShieldPath[];
+  counterfactuals: Counterfactual[];
+  quantum: { backend?: string; qubitCount?: number; circuitDepth?: number; classicalOptimum?: number; qaoaObjective?: number; optimalityGap?: number; approximationRatio?: number; feasibleShotRate?: number; mostFrequentBitstring?: string; measuredBitstring?: string; disclosure: string; executionTimeMs: number; quboAudit?: { bitstringsChecked: number; energyMismatches: number; penaltyViolatingEncodings: number } };
+}
+
+async function load(id: string): Promise<ShieldResponse | null> {
+  const base = (process.env.SENTINEL_API_BASE_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
+  try {
+    const response = await fetch(`${base}/api/shield/scenarios/${encodeURIComponent(id)}`, { cache: "no-store" });
+    return response.ok ? response.json() as Promise<ShieldResponse> : null;
+  } catch { return null; }
+}
+
+const scenarioLinks = [
+  ["credential-compromise", "Credential Compromise"],
+  ["malicious-insider", "Malicious Insider"],
+  ["multiple-routes", "Multiple Routes"],
+];
+
+export default async function ShieldPage({ searchParams }: { searchParams: Params }) {
+  const raw = (await searchParams).scenario;
+  const id = (Array.isArray(raw) ? raw[0] : raw) ?? "multiple-routes";
+  const data = await load(id);
+  if (!data) return <section className="panel p-8"><h1 className="text-2xl font-bold">SHIELD Decision Lab</h1><p className="mt-3 text-sm text-[var(--text-muted)]">Connect the SentinelAI API to compute the advisory containment plan. No fixture results are fabricated.</p></section>;
+  const rec = data.recommendation;
+  return <div className="mx-auto max-w-[1700px] space-y-5">
+    <section className="relative overflow-hidden rounded-[22px] border border-[var(--accent)]/30 bg-white p-7 shadow-[0_18px_48px_rgb(30_110_90/0.10)]">
+      <div className="flex flex-wrap items-start justify-between gap-5"><div><div className="tech-label text-[var(--accent)]">SentinelAI-Q / advisory simulation</div><h1 className="mt-3 text-3xl font-bold tracking-tight">SHIELD Decision Lab</h1><p className="mt-2 max-w-3xl text-xs leading-6 text-[var(--text-secondary)]">Minimum-disruption containment across every enumerated critical attack path, with classical validation and counterfactual verification.</p></div><div className="rounded-xl border border-[var(--medium)]/30 bg-[#fffaf0] px-4 py-3 text-xs text-[#8b6210]">Human approval required · no production actions</div></div>
+      <nav className="mt-6 flex flex-wrap gap-2">{scenarioLinks.map(([key,label]) => <Link key={key} href={`/shield?scenario=${key}`} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${key === id ? "border-[var(--accent)] bg-[var(--surface-selected)]" : "border-border"}`}>{label}</Link>)}</nav>
+    </section>
+
+    <section className="grid gap-4 lg:grid-cols-[1.2fr_.8fr]">
+      <article className="panel p-5"><div className="flex items-center gap-2"><AlertTriangle className="size-4 text-[var(--high)]"/><span className="tech-label">Live threat scenario</span></div><h2 className="mt-3 text-xl font-semibold">{data.scenario.name}</h2><p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{data.scenario.summary}</p><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><Metric label="Risk" value={`${data.scenario.riskScore}/100`}/><Metric label="Paths" value={String(data.attackPaths.length)}/><Metric label="Assets" value={String(data.scenario.affectedAssets.length)}/><Metric label="Class" value={data.scenario.threatClassification}/></div><ul className="mt-4 space-y-1 text-xs text-[var(--text-muted)]">{data.scenario.evidence.map((x:string)=><li key={x}>— {x}</li>)}</ul></article>
+      <article className="panel border-[var(--low)]/30 p-5"><div className="flex items-center gap-2 text-[var(--low)]"><ShieldCheck className="size-4"/><span className="tech-label">Validated recommendation</span></div><div className="mt-3 text-3xl font-mono font-semibold">{rec.businessDisruptionCost}</div><div className="tech-label mt-1">Modeled disruption cost</div><div className="mt-4 space-y-2">{rec.selectedActions.map((a)=><div key={a.action_id} className="rounded-lg bg-[var(--surface-elevated)] p-3"><div className="text-xs font-semibold">{a.action_type.replaceAll("_", " ")}</div><div className="mt-1 text-[10px] text-[var(--text-muted)]">{a.explanation} · covers {a.interrupts.length} path(s)</div></div>)}</div><p className="mt-4 text-[10px] text-[var(--text-muted)]">Feasible: {String(rec.feasible)} · remaining paths: {rec.remainingCriticalPaths.length}</p></article>
+    </section>
+
+    <section className="panel p-5"><div className="flex items-center gap-2"><Route className="size-4 text-[var(--accent)]"/><h2 className="text-sm font-semibold">Attack-path evidence</h2></div><div className="mt-4 grid gap-3 lg:grid-cols-2">{data.attackPaths.map((p)=><article key={p.path_id} className="rounded-xl border border-border p-4"><div className="flex justify-between"><span className="font-mono text-[10px]">{p.path_id}</span><span className="tech-label text-[var(--high)]">criticality {p.criticality}/5</span></div><div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">{p.nodes.map((n,i)=><span key={n} className="contents"><span className="rounded-md bg-[var(--surface-elevated)] px-2 py-1">{n}</span>{i<p.nodes.length-1&&<span>→</span>}</span>)}</div><p className="mt-3 text-[10px] text-[var(--text-muted)]">Observed hops {p.observed_hops} · hypothetical continuation {p.hypothetical_hops} · evidence {p.evidence.join(", ")}</p></article>)}</div></section>
+
+    <section><h2 className="mb-3 text-sm font-semibold">Counterfactual response comparison</h2><div className="grid gap-4 lg:grid-cols-3">{data.counterfactuals.map((c)=><article key={c.label} className={`panel p-5 ${c.label === "SHIELD Optimized" ? "border-[var(--accent)]/50" : ""}`}><div className="flex items-center justify-between"><h3 className="font-semibold">{c.label}</h3>{c.feasible?<CheckCircle2 className="size-4 text-[var(--low)]"/>:<AlertTriangle className="size-4 text-[var(--high)]"/>}</div><div className="mt-4 grid grid-cols-2 gap-2"><Metric label="Disruption" value={String(c.disruptionCost)}/><Metric label="Exposure" value={String(c.remainingExposure)}/></div><p className="mt-3 text-[10px] leading-5 text-[var(--text-muted)]">{c.explanation}</p></article>)}</div></section>
+
+    <section className="panel p-5"><div className="flex items-center gap-2 text-[var(--quantum)]"><Atom className="size-4"/><h2 className="text-sm font-semibold">Verified quantum optimization</h2></div><div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-8"><Metric label="Backend" value={data.quantum.backend ?? "—"}/><Metric label="Qubits" value={String(data.quantum.qubitCount ?? "—")}/><Metric label="Depth" value={String(data.quantum.circuitDepth ?? "—")}/><Metric label="Classical optimum" value={String(data.quantum.classicalOptimum)}/><Metric label="Best measured" value={String(data.quantum.qaoaObjective ?? "fallback")}/><Metric label="Absolute gap" value={String(data.quantum.optimalityGap ?? "—")}/><Metric label="Approx. ratio" value={data.quantum.approximationRatio?.toFixed(3) ?? "—"}/><Metric label="Feasible shots" value={data.quantum.feasibleShotRate === undefined ? "—" : `${(data.quantum.feasibleShotRate * 100).toFixed(1)}%`}/></div><div className="mt-4 grid gap-3 lg:grid-cols-2"><div className="rounded-lg bg-[var(--surface-elevated)] p-3 text-[10px] leading-5"><span className="tech-label">Sampling interpretation</span><p className="mt-1">Most frequent: {data.quantum.mostFrequentBitstring ?? "—"} · lowest-cost feasible: {data.quantum.measuredBitstring ?? "—"}. Candidate selection uses feasible objective, not frequency.</p></div><div className="rounded-lg bg-[var(--surface-elevated)] p-3 text-[10px] leading-5"><span className="tech-label">Independent QUBO audit</span><p className="mt-1">{data.quantum.quboAudit ? `${data.quantum.quboAudit.bitstringsChecked} bitstrings checked · ${data.quantum.quboAudit.energyMismatches} energy mismatches · ${data.quantum.quboAudit.penaltyViolatingEncodings} penalty-violating encodings` : "Audit unavailable"}</p></div></div><p className="mt-4 text-[10px] text-[var(--text-muted)]">{data.quantum.disclosure} Runtime {data.quantum.executionTimeMs} ms. Exact classical containment remains authoritative.</p></section>
+  </div>;
+}
+
+function Metric({label,value}:{label:string,value:string}) { return <div className="rounded-lg bg-[var(--surface-elevated)] p-3"><div className="tech-label">{label}</div><div className="mt-2 break-words font-mono text-sm font-semibold">{value}</div></div> }

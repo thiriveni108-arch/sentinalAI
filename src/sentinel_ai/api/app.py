@@ -146,6 +146,31 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
 
     app = FastAPI(title="SentinelAI API", version="0.1.0", lifespan=lifespan)
 
+    from sentinel_ai.shield import ShieldService
+    shield = ShieldService()
+
+    @app.get("/api/shield/scenarios", response_model=list[dict[str, object]])
+    def shield_scenarios() -> list[dict[str, object]]:
+        return shield.list_scenarios()
+
+    @app.get("/api/shield/scenarios/{scenario_id}", response_model=dict[str, object])
+    def shield_scenario(scenario_id: str, quantum: bool = True) -> dict[str, object]:
+        try:
+            return shield.analyze(scenario_id, include_quantum=quantum)
+        except KeyError:
+            raise HTTPException(404, {"code": "shield_scenario_not_found", "message": f"Unknown SHIELD scenario: {scenario_id}"})
+
+    @app.get("/api/shield/benchmark", response_model=dict[str, object])
+    def shield_benchmark(quantum: bool = False) -> dict[str, object]:
+        return shield.benchmark(include_quantum=quantum)
+
+    @app.get("/api/shield/scenarios/{scenario_id}/quantum-experiment", response_model=dict[str, object])
+    def shield_quantum_experiment(scenario_id: str) -> dict[str, object]:
+        try:
+            return shield.quantum_experiment(scenario_id)
+        except KeyError:
+            raise HTTPException(404, {"code": "shield_scenario_not_found", "message": f"Unknown SHIELD scenario: {scenario_id}"})
+
     @app.exception_handler(HTTPException)
     async def http_error(_request: Request, error: HTTPException) -> JSONResponse:
         detail = error.detail if isinstance(error.detail, dict) else {"code": "request_error", "message": str(error.detail)}
