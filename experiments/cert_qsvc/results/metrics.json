@@ -1,0 +1,96 @@
+{
+  "experiment": "CERT r4.2 balanced PennyLane QSVC benchmark",
+  "metrics": {
+    "qsvc": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          3,
+          47
+        ]
+      ],
+      "precision": 0.9215686274509803,
+      "recall": 0.94,
+      "f1": 0.9306930693069307,
+      "balanced_accuracy": 0.9299999999999999,
+      "roc_auc": 0.9068,
+      "average_precision_pr_auc": 0.9043201872361077,
+      "false_positive_rate": 0.08,
+      "training_seconds": 0.4912770999362692,
+      "inference_seconds": 0.22838640003465116,
+      "number_support_vectors": 137,
+      "decision_threshold": -0.6163942499022663,
+      "note": "Ranking metrics use uncalibrated decision_function scores."
+    },
+    "rbf_svm": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          5,
+          45
+        ]
+      ],
+      "precision": 0.9183673469387755,
+      "recall": 0.9,
+      "f1": 0.9090909090909091,
+      "balanced_accuracy": 0.91,
+      "roc_auc": 0.9159999999999999,
+      "average_precision_pr_auc": 0.9159698250098582,
+      "false_positive_rate": 0.08,
+      "training_seconds": 0.001196300028823316,
+      "inference_seconds": 0.0007456999737769365,
+      "number_support_vectors": 162,
+      "decision_threshold": -0.3223644548773192,
+      "note": "Ranking metrics use uncalibrated decision_function scores."
+    }
+  },
+  "kernel_validation": {
+    "shape": [
+      250,
+      250
+    ],
+    "finite": true,
+    "max_symmetry_error": 7.771561172376096e-16,
+    "max_diagonal_error": 3.1086244689504383e-15,
+    "minimum_eigenvalue": 3.877801728235966e-16,
+    "psd_tolerance": 1e-09,
+    "psd_within_tolerance": true
+  },
+  "runtime_details": {
+    "quantum_statevector_seconds": {
+      "train": 0.4893075000727549,
+      "val": 0.18956889992114156,
+      "test": 0.18894350004848093
+    },
+    "quantum_train_kernel_seconds": 0.0010133999167010188,
+    "quantum_validation_kernel_seconds": 0.000521100009791553,
+    "quantum_svc_fit_seconds": 0.0009561999468132854,
+    "quantum_tuning_seconds": 0.22717430000193417,
+    "classical_tuning_seconds": 0.6085026999935508,
+    "kernel_matrix_cost": {
+      "train_overlaps": 62500,
+      "validation_overlaps": 25000,
+      "test_overlaps": 25000,
+      "state_dimension": 16
+    }
+  },
+  "environment": {
+    "python": "3.14.0",
+    "pennylane": "0.43.3",
+    "numpy": "2.5.4",
+    "pandas": "2.3.3",
+    "scikit_learn": "1.9.1"
+  },
+  "limitations": [
+    "The shared benchmark is artificially balanced; it cannot estimate deployment precision or false-alert burden at CERT's approximately 0.29% natural malicious prevalence.",
+    "Chronological partitions may contain recurring employee identities, creating identity-related dependence across cohorts.",
+    "A 100-row balanced test set is small and cannot establish quantum advantage.",
+    "This is noiseless exact statevector simulation, not quantum hardware execution."
+  ]
+}

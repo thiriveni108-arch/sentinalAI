@@ -4,7 +4,9 @@ Record durable architecture decisions, typed contracts, data schemas, and scorin
 
 ## Runtime boundaries
 
-The canonical detection path remains event ingestion → feature construction → deterministic rules and Isolation Forest scoring → bounded risk calculation → SQLite persistence. Behavioural baselines, ordered Attack Lab sequence findings, Graph Analysis, MITRE ATT&CK mapping, model evaluation, and quantum-kernel evaluation are parallel evidence or evaluation layers; none silently alter the canonical risk score.
+The legacy operational demo path remains event ingestion → feature construction → deterministic rules and Isolation Forest scoring → bounded risk calculation → SQLite persistence. It is retained while the replacement is demonstrated, but CERT r4.2 employee user-days are now the primary behavioural research source. CERT rows use the saved 28-feature preprocessing/PCA schema and the four PCA inputs expected by the frozen PennyLane QSVC; they are never passed into event-level rules or quantum features. The QSVC is advisory and none of its outputs silently alter the legacy risk score.
+
+`sentinel_ai.cert` exposes read-only status, investigation, and labelled user-day replay endpoints. Recorded daily aggregates, ground-truth research labels, model inference, and explanation are identified separately. A user-day replay cannot establish within-day event order. Because the prepared schema has no validated access-control edges, CERT investigations currently do not automatically construct SHIELD scenarios.
 
 ## MITRE ATT&CK intelligence
 

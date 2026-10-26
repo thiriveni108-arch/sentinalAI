@@ -171,6 +171,23 @@ SentinelAI also provides an experimental **QAOA (Quantum Approximate Optimizatio
 - **Advisory Only**: The optimization is purely advisory (`affectsProductionRisk: false`). It provides a ranked list of alerts and execution probabilities but does not execute automated containment or modify risk scores.
 - **Explainable Ranking**: The UI compares the classical deterministic ranking with the QAOA probabilistic ranking, providing contribution factor reasoning for every alert.
 
+## CERT r4.2 primary research workflow
+
+SentinelAI-Q's primary behavioural research source is the prepared **CERT r4.2 employee user-day dataset**. The runtime reads the existing chronological splits and saved preprocessing artifacts; it does not parse the raw CERT logs. PennyLane's four-qubit fidelity-kernel QSVC is the main experimental classifier and remains advisory. Its threshold was selected on a small artificially balanced benchmark, so it does not alter production risk or trigger containment until alert burden is validated on naturally imbalanced data.
+
+Materialize the selected benchmark once (no hyperparameter search or test-label use), then inspect a prepared user-day:
+
+```powershell
+python scripts/materialize_cert_qsvc.py
+curl "http://127.0.0.1:8000/api/cert/status"
+curl "http://127.0.0.1:8000/api/cert/user-days/AAF0535/2011-03-01?split=test"
+curl "http://127.0.0.1:8000/api/cert/replay/AAF0535?split=test&malicious_only=true"
+```
+
+The investigation response separates recorded daily aggregates, inferred QSVC evidence, and research labels. The replay endpoint is a chronological user-day aggregate timeline—not a raw within-day event replay. CERT r4.2 user-day rows do not contain sufficient access-control or attack-graph relationships for an automatic SHIELD handoff, so the API explicitly returns `shieldEligible: false` / `shieldHandoff: null`. SHIELD continues to operate on its explicit synthetic graphs with deterministic constraints and the exact classical optimizer as authority.
+
+The old deterministic event demo, Attack Lab, and SQLite records are retained temporarily as working legacy functionality. They are no longer described as the primary behavioural dataset and are not silently mixed with CERT user-day inputs.
+
 ## SHIELD Decision Engine
 
 SHIELD is a separate, advisory containment planner. It enumerates bounded, directed attack paths only across explicitly exploitable relationships; models reversible session, privilege, resource, export, device, and account interventions; and selects the least-disruptive combination that covers every enumerated critical path. The authoritative recommendation is always checked by the exact classical solver. Counterfactuals clone the modeled state and never invoke the existing response adapter.

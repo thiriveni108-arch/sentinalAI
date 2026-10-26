@@ -72,6 +72,7 @@ from sentinel_ai.mitre import ATTACK_SOURCE_URL, ATTACK_VERSION, catalog
 from sentinel_ai.response.models import ContainmentState, ResponseAction, ResponseAudit
 from sentinel_ai.response.service import ResponseActionFailed
 from sentinel_ai.quantum import QuantumAnalyzer
+from sentinel_ai.cert import CertResearchService
 
 
 logger = logging.getLogger(__name__)
@@ -148,6 +149,31 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
 
     from sentinel_ai.shield import ShieldService
     shield = ShieldService()
+    cert = CertResearchService()
+
+    @app.get("/api/cert/status", response_model=dict[str, object])
+    def cert_status() -> dict[str, object]:
+        """Describe the primary CERT research dataset and frozen QSVC boundary."""
+        return cert.status()
+
+    @app.get("/api/cert/user-days/{user}/{date}", response_model=dict[str, object])
+    def cert_user_day(user: str, date: str, split: Literal["train", "validation", "test"] = "test") -> dict[str, object]:
+        try:
+            return cert.investigate(user, date, split)
+        except KeyError as error:
+            raise HTTPException(404, {"code": "cert_user_day_not_found", "message": str(error).strip("'")}) from error
+        except FileNotFoundError as error:
+            raise HTTPException(503, {"code": "cert_qsvc_artifact_missing", "message": str(error)}) from error
+        except RuntimeError as error:
+            raise HTTPException(503, {"code": "cert_qsvc_unavailable", "message": str(error)}) from error
+
+    @app.get("/api/cert/replay/{user}", response_model=dict[str, object])
+    def cert_replay(user: str, split: Literal["train", "validation", "test"] = "test",
+                    malicious_only: bool = True, limit: Annotated[int, Query(ge=1, le=100)] = 30) -> dict[str, object]:
+        try:
+            return cert.replay(user, split, malicious_only, limit)
+        except KeyError as error:
+            raise HTTPException(404, {"code": "cert_replay_not_found", "message": str(error).strip("'")}) from error
 
     @app.get("/api/shield/scenarios", response_model=list[dict[str, object]])
     def shield_scenarios() -> list[dict[str, object]]:
@@ -460,6 +486,17 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
             training_scope="Normal history only; final 30% per employee after the persisted baseline split.",
             estimator_configuration={"n_estimators": 200, "contamination": "auto", "max_samples": "auto", "random_state": config.RANDOM_SEED, "n_jobs": 1},
             anomaly_definition="Empirical nonconformity percentile against normal training history; not an attack probability.",
+        ), ModelMetadataDto(
+            name="CERT r4.2 PennyLane QSVC (advisory)",
+            implementation="PennyLane fidelity kernel + sklearn.svm.SVC(precomputed)",
+            version="cert-r4.2-qsvc-v1",
+            status="ready" if cert.artifact_path.exists() else "artifact-missing",
+            feature_schema_version="cert-r4.2-user-day-pca4-v1",
+            feature_order=["pca_1", "pca_2", "pca_3", "pca_4"],
+            training_rows=250,
+            training_scope="Fixed balanced chronological benchmark cohort; runtime accepts prepared CERT user-days only.",
+            estimator_configuration={"qubits": 4, "C": 1.0, "kernel": "PennyLane exact fidelity", "advisory": True},
+            anomaly_definition="Validation-thresholded QSVC decision score; not a calibrated probability and not validated for natural alert burden.",
         )]
 
     @app.get("/api/models/evaluation", response_model=dict[str, object])

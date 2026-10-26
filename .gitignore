@@ -26,6 +26,7 @@ data/processed/*
 !data/processed/.gitkeep
 artifacts/models/*
 !artifacts/models/.gitkeep
+!artifacts/models/cert_r4_2_qsvc.pkl
 artifacts/reports/*
 !artifacts/reports/.gitkeep
 

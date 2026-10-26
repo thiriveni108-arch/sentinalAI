@@ -1,0 +1,86 @@
+{
+  "seed": 42,
+  "label_column_discovered": "label",
+  "features": [
+    "pca_1",
+    "pca_2",
+    "pca_3",
+    "pca_4"
+  ],
+  "partitions": {
+    "train": 250,
+    "val": 100,
+    "test": 100
+  },
+  "preprocessing": {
+    "type": "MinMaxScaler",
+    "range": [
+      -3.141592653589793,
+      3.141592653589793
+    ],
+    "clip": true,
+    "fit_partition": "train only",
+    "identical_to_qsvc": true,
+    "data_min": [
+      -2.111124650325233,
+      -8.312233497882612,
+      -13.42007850813978,
+      -3.751260636991644
+    ],
+    "data_max": [
+      27.5404071077987,
+      5.046923383110473,
+      5.993412176624803,
+      9.419536578931584
+    ]
+  },
+  "threshold_policy": "Per model/config, maximize validation balanced accuracy; ties prefer threshold nearest zero, then lower threshold. Test labels never used.",
+  "vqc": {
+    "backend": "PennyLane default.qubit exact statevector (shots=None)",
+    "qubits": 4,
+    "architecture": "RY AngleEmbedding; 2 StronglyEntanglingLayers, each with one Rot per qubit and ring CNOTs; mean of four Pauli-Z expectations",
+    "depth": 11,
+    "gate_count": 20,
+    "gate_types": {
+      "RY": 4,
+      "Rot": 8,
+      "CNOT": 8
+    },
+    "trainable_parameters": 24,
+    "loss": "mean squared error against labels mapped to {-1,+1}",
+    "optimizer": "PennyLane AdamOptimizer",
+    "learning_rate": 0.03,
+    "batch_size": 25,
+    "maximum_epochs": 30,
+    "epochs_completed": 23,
+    "early_stopping": {
+      "monitor": "validation_loss",
+      "patience": 6,
+      "minimum_delta": 0.0001,
+      "best_validation_loss": 0.7857094665940006
+    },
+    "decision_threshold": -0.11050566317751476,
+    "parameter_update_norm": 3.0488438577135737
+  },
+  "mlp": {
+    "selected_hidden_layers": [
+      8
+    ],
+    "activation": "tanh",
+    "alpha": 0.001,
+    "learning_rate": 0.01,
+    "validation_selection_candidates": [
+      [
+        8
+      ],
+      [
+        8,
+        4
+      ]
+    ],
+    "selected_validation_balanced_accuracy": 0.95,
+    "selected_validation_f1": 0.9494949494949495,
+    "selected_validation_average_precision": 0.9370870021452037,
+    "decision_threshold": 0.506978637949836
+  }
+}

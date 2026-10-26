@@ -1,0 +1,127 @@
+{
+  "experiment": "CERT r4.2 PennyLane VQC comparison",
+  "metrics": {
+    "qsvc": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          3,
+          47
+        ]
+      ],
+      "precision": 0.9215686274509803,
+      "recall": 0.94,
+      "f1": 0.9306930693069307,
+      "balanced_accuracy": 0.9299999999999999,
+      "roc_auc": 0.9068,
+      "average_precision_pr_auc": 0.9043201872361077,
+      "false_positive_rate": 0.08,
+      "training_seconds": 0.4912770999362692,
+      "inference_seconds": 0.22838640003465116,
+      "number_support_vectors": 137,
+      "decision_threshold": -0.6163942499022663,
+      "note": "Ranking metrics use uncalibrated decision_function scores."
+    },
+    "vqc": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          5,
+          45
+        ]
+      ],
+      "precision": 0.9183673469387755,
+      "recall": 0.9,
+      "f1": 0.9090909090909091,
+      "balanced_accuracy": 0.91,
+      "roc_auc": 0.9083999999999999,
+      "average_precision_pr_auc": 0.9224465053989592,
+      "false_positive_rate": 0.08,
+      "training_seconds": 5.421828699996695,
+      "inference_seconds": 0.005168400006368756,
+      "decision_threshold": -0.11050566317751476,
+      "note": "Continuous scores are used for ranking metrics and are not calibrated probabilities."
+    },
+    "rbf_svm": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          5,
+          45
+        ]
+      ],
+      "precision": 0.9183673469387755,
+      "recall": 0.9,
+      "f1": 0.9090909090909091,
+      "balanced_accuracy": 0.91,
+      "roc_auc": 0.9159999999999999,
+      "average_precision_pr_auc": 0.9159698250098582,
+      "false_positive_rate": 0.08,
+      "training_seconds": 0.001196300028823316,
+      "inference_seconds": 0.0007456999737769365,
+      "number_support_vectors": 162,
+      "decision_threshold": -0.3223644548773192,
+      "note": "Ranking metrics use uncalibrated decision_function scores."
+    },
+    "mlp": {
+      "confusion_matrix": [
+        [
+          46,
+          4
+        ],
+        [
+          3,
+          47
+        ]
+      ],
+      "precision": 0.9215686274509803,
+      "recall": 0.94,
+      "f1": 0.9306930693069307,
+      "balanced_accuracy": 0.9299999999999999,
+      "roc_auc": 0.928,
+      "average_precision_pr_auc": 0.877830119475401,
+      "false_positive_rate": 0.08,
+      "training_seconds": 0.04611100000329316,
+      "inference_seconds": 0.0001846000086516142,
+      "decision_threshold": 0.506978637949836,
+      "note": "Continuous scores are used for ranking metrics and are not calibrated probabilities."
+    }
+  },
+  "cohort_verification": {
+    "train": {
+      "rows": 250,
+      "identical_to_qsvc": true
+    },
+    "val": {
+      "rows": 100,
+      "identical_to_qsvc": true
+    },
+    "test": {
+      "rows": 100,
+      "identical_to_qsvc": true
+    }
+  },
+  "parameter_update_norm": 3.0488438577135737,
+  "loss_and_predictions_finite": true,
+  "existing_qsvc_sha256_unchanged": {
+    "experiments/cert_qsvc/benchmark.py": "64aac6244e46bcf48d3f519bb14c7a17f107466f1460b6114fd6f112d729f7ee",
+    "experiments/cert_qsvc/results/metrics.json": "0f464a984b23aa064fb36ca93a14db6d7b19235df285eac508bb27bd8842eed6",
+    "experiments/cert_qsvc/results/config.json": "b09a252def9f96ee8a37f87d97dd3e288c9d4fb086494c468312159384b272a6",
+    "experiments/cert_qsvc/results/predictions.csv": "a0039f964a5605c3d6c602673583e0e3c8043df92d7f69ffcb573a2dbb59e7ac"
+  },
+  "limitations": [
+    "The shared benchmark is artificially balanced; it cannot estimate deployment precision or false-alert burden at CERT's approximately 0.29% natural malicious prevalence.",
+    "Chronological partitions may contain recurring employee identities, creating identity-related dependence across cohorts.",
+    "A 100-row balanced test set is small and cannot establish quantum advantage.",
+    "This is noiseless exact statevector simulation, not quantum hardware execution."
+  ]
+}
