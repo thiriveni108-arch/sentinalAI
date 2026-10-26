@@ -29,7 +29,7 @@ export function AppShell({ children, system }: { children: React.ReactNode; syst
               <Search aria-hidden="true" className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
               <input name="q" aria-label="Search threats" placeholder="Search alerts or employees" className="control w-full bg-[var(--surface-elevated)] pl-9 pr-3 placeholder:text-[var(--text-muted)]" />
             </form>
-            <Link href="/alerts" aria-label="Open alerts" className="grid size-9 place-items-center rounded-lg border border-border bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"><Bell className="size-4" /></Link>
+            <Link href="/threats" aria-label="Open threat monitor" className="grid size-9 place-items-center rounded-lg border border-border bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"><Bell className="size-4" /></Link>
             <div className="hidden border-l border-border pl-4 sm:block"><span className="flex items-center gap-1.5 text-[11px] font-semibold"><span className="size-1.5 rounded-full bg-[var(--accent)]" />Data · {system.data.status}</span><span className="text-[9px] text-[var(--text-muted)]">{system.data.label} · {system.model.status}</span></div>
           </div>
           <div className="border-t border-border lg:hidden"><SidebarNav compact /></div>

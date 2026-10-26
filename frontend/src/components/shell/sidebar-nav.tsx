@@ -2,23 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Bell, Atom, BrainCircuit, FlaskConical, LayoutDashboard, ShieldAlert, UserRoundSearch, Share2, Crosshair, ShieldCheck } from "lucide-react";
+import { FlaskConical, LayoutDashboard, ShieldAlert, UserRoundSearch, SearchCheck, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { plannedModules, type PlannedModuleSlug } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
 const primary = [
-  { href: "/", label: "Overview", icon: LayoutDashboard },
-  { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/threats", label: "Threats", icon: ShieldAlert },
-  { href: "/graph", label: "Graph Analysis", icon: Share2 },
-  { href: "/threat-intelligence", label: "Threat Intelligence", icon: Crosshair },
-  { href: "/quantum", label: "Quantum Analysis", icon: Atom },
-  { href: "/shield", label: "SHIELD Decision Lab", icon: ShieldCheck },
-  { href: "/attack-lab", label: "Attack Lab", icon: FlaskConical },
-  { href: "/alerts", label: "Alerts", icon: Bell },
-  { href: "/users", label: "User Behaviour", icon: UserRoundSearch },
-  { href: "/models", label: "Detection Models", icon: BrainCircuit },
+  { href: "/", label: "Command Center", icon: LayoutDashboard },
+  { href: "/threats", label: "Threat Monitor", icon: ShieldAlert },
+  { href: "/users", label: "Identities & Activity", icon: UserRoundSearch },
+  { href: "/investigation", label: "Investigation", icon: SearchCheck },
+  { href: "/shield", label: "SHIELD Response", icon: ShieldCheck },
+  { href: "/simulation", label: "Simulation & Evaluation", icon: FlaskConical },
 ];
 const plannedIcons: Record<PlannedModuleSlug, LucideIcon> = {
 };
@@ -34,9 +29,9 @@ export function SidebarNav({ compact = false }: { compact?: boolean }) {
           <Link key={href} href={href} aria-current={active ? "page" : undefined} className={cn(
             "flex items-center gap-3 border-transparent text-[12px] font-medium transition-all hover:translate-x-0.5 focus-visible:z-10",
             compact ? "border-b-2 px-3" : "h-10 rounded-lg border-l-2 px-3",
-            active ? (href === "/quantum" ? "border-[var(--quantum)] bg-[var(--quantum-soft)] font-semibold text-[var(--quantum-strong)]" : "border-[var(--accent)] bg-[var(--surface-selected)] font-semibold text-foreground") : (href === "/quantum" ? "text-[var(--quantum-strong)] hover:bg-[var(--quantum-soft)]" : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-foreground"),
+            active ? "border-[var(--accent)] bg-[var(--surface-selected)] font-semibold text-foreground" : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-foreground",
           )}>
-            <Icon aria-hidden="true" className={cn("size-4", active && (href === "/quantum" ? "text-[var(--quantum)]" : "text-[var(--accent)]"))} />
+            <Icon aria-hidden="true" className={cn("size-4", active && "text-[var(--accent)]")} />
             <span>{label}</span>
           </Link>
         );

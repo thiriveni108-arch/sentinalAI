@@ -40,16 +40,21 @@ class CertResearchService:
         summary = self._json(self.data_dir / "split_summary.json")
         metrics = self._json(self.results_dir / "metrics.json")
         model_ready = self.artifact_path.exists()
+        processed_ready = all((self.data_dir / f"{name}.csv").exists() for name in ("train", "validation", "test"))
+        catalog = self._catalog() if processed_ready else pd.DataFrame(columns=["user", "date"])
         return {
             "primaryDataset": "CERT Insider Threat r4.2",
             "entitySchema": "employee user-day",
             "featureSchema": list(PCA_FEATURES),
-            "processedDataReady": all((self.data_dir / f"{name}.csv").exists() for name in ("train", "validation", "test")),
+            "processedDataReady": processed_ready,
             "savedPreprocessingReady": (self.data_dir / "scaler_model.pkl").exists() and (self.data_dir / "pca_model.pkl").exists(),
             "qsvcArtifactReady": model_ready,
             "qsvcRole": "advisory",
             "affectsProductionRisk": False,
-            "naturalPositiveRate": summary.get("overall", {}).get("overall_positive_rate"),
+            "naturalPositiveRate": float(summary.get("overall", {}).get("overall_positive_rate", 0)) / 100.0,
+            "availableEmployees": int(catalog["user"].nunique()) if processed_ready else 0,
+            "processedUserDays": int(len(catalog)),
+            "dateCoverage": {"start": str(catalog["date"].min()), "end": str(catalog["date"].max())} if processed_ready else {"start": "unavailable", "end": "unavailable"},
             "benchmark": metrics.get("metrics", {}).get("qsvc", {}),
             "runtimeBoundary": "CERT user-day inputs only; event-level SentinelAI quantum inputs are incompatible.",
             "legacyDemo": "Retained temporarily in SQLite and Attack Lab; it is not the primary research dataset.",
@@ -105,6 +110,72 @@ class CertResearchService:
             "shieldHandoff": None,
             "disclosure": "This is a chronological replay of prepared labelled user-days, not raw CERT events. Within-day event order and access relationships are unavailable, so Attack Lab sequence rules and SHIELD containment are not asserted.",
         }
+
+    def list_users(self, q: str = "", page: int = 1, page_size: int = 50) -> dict[str, Any]:
+        frame = self._catalog()
+        grouped = frame.groupby("user", sort=True).agg(
+            user_days=("date", "size"), first_date=("date", "min"), last_date=("date", "max"),
+            labelled_malicious_days=("label", "sum"),
+            login_after_hours=("logon_after_hours_count", "sum"), usb_connections=("usb_connect_count", "sum"),
+            files_copied=("file_copy_count", "sum"), emails_sent=("email_sent_count", "sum"),
+        ).reset_index()
+        if q:
+            grouped = grouped[grouped["user"].astype(str).str.contains(q, case=False, regex=False)]
+        total = len(grouped); start = (page - 1) * page_size
+        items = [{"user": str(row.user), "userDays": int(row.user_days), "firstDate": str(row.first_date),
+                  "lastDate": str(row.last_date), "labelledMaliciousDays": int(row.labelled_malicious_days),
+                  "activityTotals": {"afterHoursLogons": int(row.login_after_hours), "usbConnections": int(row.usb_connections),
+                                     "filesCopied": int(row.files_copied), "emailsSent": int(row.emails_sent)}}
+                 for row in grouped.iloc[start:start + page_size].itertuples(index=False)]
+        return {"items": items, "page": self._page(page, page_size, total),
+                "source": "CERT r4.2 synthetic research dataset", "identityMetadataAvailable": False}
+
+    def list_user_days(self, user: str, start_date: str | None = None, end_date: str | None = None,
+                       page: int = 1, page_size: int = 50) -> dict[str, Any]:
+        frame = self._catalog(); rows = frame[frame["user"].astype(str) == user]
+        if start_date: rows = rows[rows["date"].astype(str) >= start_date]
+        if end_date: rows = rows[rows["date"].astype(str) <= end_date]
+        rows = rows.sort_values("date", ascending=False); total = len(rows); offset = (page - 1) * page_size
+        items = []
+        for row in rows.iloc[offset:offset + page_size].itertuples(index=False):
+            items.append({"user": str(row.user), "date": str(row.date), "split": str(row.split),
+                          "label": int(row.label), "scenario": int(row.scenario),
+                          "activity": {"logons": int(row.logon_count), "afterHoursLogons": int(row.logon_after_hours_count),
+                                       "usbConnections": int(row.usb_connect_count), "filesCopied": int(row.file_copy_count),
+                                       "emailsSent": int(row.email_sent_count), "externalEmails": int(row.email_external_recipients)}})
+        return {"items": items, "page": self._page(page, page_size, total), "source": "recorded CERT user-day aggregates"}
+
+    def list_findings(self, q: str = "", prediction: int | None = 1, page: int = 1, page_size: int = 50) -> dict[str, Any]:
+        cohort = pd.read_csv(self.data_dir / "quantum_benchmark" / "qsvc" / "test.csv")
+        predictions = pd.read_csv(self.results_dir / "predictions.csv")
+        joined = pd.concat([cohort.reset_index(drop=True), predictions.reset_index(drop=True)], axis=1)
+        if q:
+            joined = joined[joined["user"].astype(str).str.contains(q, case=False, regex=False) |
+                            joined["date"].astype(str).str.contains(q, case=False, regex=False)]
+        if prediction is not None: joined = joined[joined["qsvc_prediction"] == prediction]
+        total = len(joined); offset = (page - 1) * page_size; items = []
+        for row in joined.iloc[offset:offset + page_size].itertuples(index=False):
+            signals = [name for name in BEHAVIOURAL_SIGNALS if float(getattr(row, name)) > 0]
+            items.append({"findingId": f"CERT-QSVC-{row.user}-{row.date}", "user": str(row.user), "date": str(row.date),
+                          "source": "CERT r4.2 balanced benchmark", "model": "PennyLane QSVC",
+                          "prediction": int(row.qsvc_prediction), "decisionScore": float(row.qsvc_decision_score),
+                          "decisionThreshold": -0.6163942499022663, "scoreIsProbability": False,
+                          "recordedLabel": int(row.label), "observedSignals": signals})
+        return {"items": items, "page": self._page(page, page_size, total), "scoringCoverage": 100,
+                "coverageBasis": "Persisted balanced test benchmark only; not all CERT user-days.", "advisory": True}
+
+    def benchmark_results(self) -> dict[str, Any]:
+        qsvc = self._json(self.results_dir / "metrics.json")
+        vqc_dir = self.root / "experiments" / "cert_vqc" / "results"
+        vqc = self._json(vqc_dir / "metrics.json")
+        vqc_config = self._json(vqc_dir / "config.json")
+        qsvc_config = self._json(self.results_dir / "config.json")
+        return {"dataset": "CERT r4.2", "cohort": {"train": 250, "validation": 100, "test": 100,
+                "balanced": True, "naturalPrevalenceValidated": False},
+                "models": vqc.get("metrics", qsvc.get("metrics", {})),
+                "circuits": {"qsvc": qsvc_config.get("quantum", {}), "vqc": vqc_config.get("vqc", {})},
+                "limitations": vqc.get("limitations", qsvc.get("limitations", [])),
+                "claim": "No established quantum advantage; exact noiseless simulation only."}
 
     def _predict(self, row: pd.Series) -> dict[str, Any]:
         if not self.artifact_path.exists():
@@ -174,6 +245,20 @@ class CertResearchService:
         if split not in names:
             raise ValueError(f"Unsupported CERT split: {split}")
         return pd.read_csv(self.data_dir / names[split])
+
+    @lru_cache(maxsize=1)
+    def _catalog(self) -> pd.DataFrame:
+        columns = ["user", "date", "label", "scenario", "logon_count", "logon_after_hours_count",
+                   "usb_connect_count", "file_copy_count", "email_sent_count", "email_external_recipients"]
+        frames = []
+        for split, name in (("train", "train.csv"), ("validation", "validation.csv"), ("test", "test.csv")):
+            frame = pd.read_csv(self.data_dir / name, usecols=columns)
+            frame["split"] = split; frames.append(frame)
+        return pd.concat(frames, ignore_index=True)
+
+    @staticmethod
+    def _page(page: int, page_size: int, total: int) -> dict[str, int]:
+        return {"page": page, "pageSize": page_size, "total": total, "totalPages": max(1, (total + page_size - 1) // page_size)}
 
     @staticmethod
     @lru_cache(maxsize=1)

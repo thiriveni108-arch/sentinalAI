@@ -175,6 +175,27 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         except KeyError as error:
             raise HTTPException(404, {"code": "cert_replay_not_found", "message": str(error).strip("'")}) from error
 
+    @app.get("/api/cert/users", response_model=dict[str, object])
+    def cert_users(q: str = "", page: Annotated[int, Query(ge=1)] = 1,
+                   page_size: Annotated[int, Query(ge=1, le=100)] = 50) -> dict[str, object]:
+        return cert.list_users(q, page, page_size)
+
+    @app.get("/api/cert/users/{user}/days", response_model=dict[str, object])
+    def cert_user_days(user: str, start: str | None = None, end: str | None = None,
+                       page: Annotated[int, Query(ge=1)] = 1,
+                       page_size: Annotated[int, Query(ge=1, le=100)] = 50) -> dict[str, object]:
+        return cert.list_user_days(user, start, end, page, page_size)
+
+    @app.get("/api/cert/findings", response_model=dict[str, object])
+    def cert_findings(q: str = "", prediction: Annotated[int | None, Query(ge=0, le=1)] = 1,
+                      page: Annotated[int, Query(ge=1)] = 1,
+                      page_size: Annotated[int, Query(ge=1, le=100)] = 50) -> dict[str, object]:
+        return cert.list_findings(q, prediction, page, page_size)
+
+    @app.get("/api/cert/benchmarks", response_model=dict[str, object])
+    def cert_benchmarks() -> dict[str, object]:
+        return cert.benchmark_results()
+
     @app.get("/api/shield/scenarios", response_model=list[dict[str, object]])
     def shield_scenarios() -> list[dict[str, object]]:
         return shield.list_scenarios()

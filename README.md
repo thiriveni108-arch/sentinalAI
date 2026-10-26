@@ -188,6 +188,12 @@ The investigation response separates recorded daily aggregates, inferred QSVC ev
 
 The old deterministic event demo, Attack Lab, and SQLite records are retained temporarily as working legacy functionality. They are no longer described as the primary behavioural dataset and are not silently mixed with CERT user-day inputs.
 
+### Unified SOC console
+
+The frontend now presents exactly six primary workspaces: Command Center (`/`), Threat Monitor (`/threats`), Identities & Activity (`/users`), Investigation (`/investigation`), SHIELD Response (`/shield`), and Simulation & Evaluation (`/simulation`). Legacy routes remain available for compatible deep links and controlled simulation workflows, but are no longer duplicated in primary navigation.
+
+Threat Monitor identifies the source and model for each finding. CERT QSVC entries come only from the persisted 100-row balanced test benchmark; legacy SQLite alerts remain separately labelled synthetic event detections. Investigation preserves recorded, inferred, and hypothetical provenance and blocks CERT-to-SHIELD handoff where access relationships are unavailable.
+
 ## SHIELD Decision Engine
 
 SHIELD is a separate, advisory containment planner. It enumerates bounded, directed attack paths only across explicitly exploitable relationships; models reversible session, privilege, resource, export, device, and account interventions; and selects the least-disruptive combination that covers every enumerated critical path. The authoritative recommendation is always checked by the exact classical solver. Counterfactuals clone the modeled state and never invoke the existing response adapter.

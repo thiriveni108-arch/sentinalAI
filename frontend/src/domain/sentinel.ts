@@ -150,6 +150,19 @@ export interface PageResult<T> {
   page: PageMeta;
 }
 
+export interface CertStatus {
+  primaryDataset: string; entitySchema: string; featureSchema: string[]; processedDataReady: boolean;
+  savedPreprocessingReady: boolean; qsvcArtifactReady: boolean; qsvcRole: string; affectsProductionRisk: boolean;
+  naturalPositiveRate: number; benchmark: Record<string, unknown>; runtimeBoundary: string; legacyDemo: string;
+  availableEmployees: number; processedUserDays: number; dateCoverage: { start: string; end: string };
+}
+export interface CertUserSummary { user: string; userDays: number; firstDate: string; lastDate: string; labelledMaliciousDays: number; activityTotals: { afterHoursLogons: number; usbConnections: number; filesCopied: number; emailsSent: number } }
+export interface CertUserDay { user: string; date: string; split: string; label: number; scenario: number; activity: { logons: number; afterHoursLogons: number; usbConnections: number; filesCopied: number; emailsSent: number; externalEmails: number } }
+export interface CertFinding { findingId: string; user: string; date: string; source: string; model: string; prediction: number; decisionScore: number; decisionThreshold: number; scoreIsProbability: false; recordedLabel: number; observedSignals: string[] }
+export interface CertInvestigation { record: { user: string; date: string; split: string; label: number; scenario: number; features: Record<string, number> }; behaviouralEvidence: { feature: string; value: number; evidenceType: string }[]; classicalEvidence: { transparentUserDayRules: string[]; rbfSvm: { prediction: number; decisionScore: number; decisionThreshold: number } | null; agreementWithQsvc: boolean; note: string }; classification: { model: string; prediction: number; decisionScore: number; decisionThreshold: number; scoreIsProbability: boolean; explanationMethod: string; featureInfluences: { feature: string; value: number; scoreInfluence: number }[]; advisory: boolean; validationCaveat: string }; alert: { raised: boolean; advisory: boolean; title: string }; threatContext: { recorded: string; inferred: string; shieldEligible: boolean; shieldHandoff: null; reason: string } }
+export interface CertReplay { user: string; split: string; replayType: string; timeline: { date: string; label: number; scenario: number; recordedAggregates: Record<string, number> }[]; eventSequenceAvailable: false; simulatedContainment: false; shieldHandoff: null; disclosure: string }
+export interface CertBenchmarks { dataset: string; cohort: { train: number; validation: number; test: number; balanced: boolean; naturalPrevalenceValidated: boolean }; models: Record<string, Record<string, unknown>>; circuits: Record<string, Record<string, unknown>>; limitations: string[]; claim: string }
+
 export interface ActivityRecord {
   eventId: string;
   occurredAt: string;

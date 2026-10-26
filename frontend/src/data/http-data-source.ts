@@ -1,5 +1,5 @@
 import "server-only";
-import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult } from "@/domain/sentinel";
+import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks } from "@/domain/sentinel";
 
 import type { SentinelDataSource } from "@/data/sentinel-data-source";
 
@@ -51,7 +51,7 @@ export class HttpDataSource implements SentinelDataSource {
   }
   getOverview() { return this.get<OperationsOverview>("/api/overview"); }
   async listThreats(filters: ThreatFilters = {}) {
-    const result = await this.get<PageResult<ThreatSummary>>(`/api/threats${queryString({ q: filters.q, risk: filters.risk, status: filters.status, page_size: 250 })}`);
+    const result = await this.get<PageResult<ThreatSummary>>(`/api/threats${queryString({ q: filters.q, risk: filters.risk, status: filters.status, page_size: 100 })}`);
     return result.items;
   }
   async getThreat(alertId: string) {
@@ -189,4 +189,17 @@ export class HttpDataSource implements SentinelDataSource {
       throw error;
     }
   }
+  getCertStatus() { return this.get<CertStatus>("/api/cert/status"); }
+  listCertUsers(filters: { q?: string; page?: number; pageSize?: number } = {}) {
+    return this.get<PageResult<CertUserSummary>>(`/api/cert/users${queryString({ q: filters.q, page: filters.page, page_size: filters.pageSize })}`);
+  }
+  listCertUserDays(user: string, filters: { start?: string; end?: string; page?: number; pageSize?: number } = {}) {
+    return this.get<PageResult<CertUserDay>>(`/api/cert/users/${encodeURIComponent(user)}/days${queryString({ start: filters.start, end: filters.end, page: filters.page, page_size: filters.pageSize })}`);
+  }
+  listCertFindings(filters: { q?: string; prediction?: number; page?: number; pageSize?: number } = {}) {
+    return this.get<PageResult<CertFinding> & { scoringCoverage: number; coverageBasis: string; advisory: boolean }>(`/api/cert/findings${queryString({ q: filters.q, prediction: filters.prediction, page: filters.page, page_size: filters.pageSize })}`);
+  }
+  async getCertInvestigation(user: string, date: string, split = "test") { try { return await this.get<CertInvestigation>(`/api/cert/user-days/${encodeURIComponent(user)}/${encodeURIComponent(date)}?split=${encodeURIComponent(split)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
+  async getCertReplay(user: string, split = "test") { try { return await this.get<CertReplay>(`/api/cert/replay/${encodeURIComponent(user)}?split=${encodeURIComponent(split)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
+  getCertBenchmarks() { return this.get<CertBenchmarks>("/api/cert/benchmarks"); }
 }

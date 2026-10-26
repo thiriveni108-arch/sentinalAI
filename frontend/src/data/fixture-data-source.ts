@@ -277,4 +277,11 @@ export const fixtureDataSource: SentinelDataSource = {
     throw new Error("Cannot run optimization in fixture mode.");
   },
   getQuantumOptimizationLatest: async () => null,
+  getCertStatus: async () => ({ primaryDataset: "CERT r4.2 (live API required)", entitySchema: "employee user-day", featureSchema: ["pca_1", "pca_2", "pca_3", "pca_4"], processedDataReady: false, savedPreprocessingReady: false, qsvcArtifactReady: false, qsvcRole: "advisory", affectsProductionRisk: false, naturalPositiveRate: 0.002923, availableEmployees: 0, processedUserDays: 0, dateCoverage: { start: "unavailable", end: "unavailable" }, benchmark: {}, runtimeBoundary: "Fixture mode does not include CERT records.", legacyDemo: "Current fixture is retained for simulation only." }),
+  listCertUsers: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 } }),
+  listCertUserDays: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 } }),
+  listCertFindings: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 }, scoringCoverage: 0, coverageBasis: "Live API required.", advisory: true }),
+  getCertInvestigation: async () => null,
+  getCertReplay: async () => null,
+  getCertBenchmarks: async () => ({ dataset: "CERT r4.2", cohort: { train: 250, validation: 100, test: 100, balanced: true, naturalPrevalenceValidated: false }, models: {}, circuits: {}, limitations: ["Live API required to read persisted experiment metrics."], claim: "No established quantum advantage." }),
 };

@@ -1,54 +1,9 @@
-import { InvestigationDrawer } from "@/components/threats/investigation-drawer";
-import { RiskOrb } from "@/components/prism/risk-orb";
-import type { Metadata } from "next";
-import { ThreatFilterBar } from "@/components/threats/threat-filter-bar";
-import { ThreatQueue } from "@/components/threats/threat-queue";
-import { getSentinelDataSource } from "@/data/data-source";
-import { parseRiskFilter, parseStatusFilter } from "@/data/threat-query";
-import { ThreatStoryPanel } from "@/components/threat-intelligence/threat-story-panel";
-import { ContainmentPanel } from "@/components/threats/containment-panel";
 import Link from "next/link";
-import { X } from "lucide-react";
-
-export const metadata: Metadata = { title: "Threat Queue" };
-
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-function scalar(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
-
-export default async function ThreatsPage({ searchParams }: { searchParams: SearchParams }) {
-  const params = await searchParams;
-  const q = scalar(params.q) ?? "";
-  const risk = parseRiskFilter(scalar(params.risk));
-  const status = parseStatusFilter(scalar(params.status));
-  const focus = scalar(params.focus);
-  const source = getSentinelDataSource();
-  const [threats, counts, focusedThreat, mitre] = await Promise.all([
-    source.listThreats({ q, risk, status }),
-    source.getCounts(),
-    focus ? source.getThreat(focus) : Promise.resolve(null),
-    focus ? source.getMitreAlert(focus) : Promise.resolve(null),
-  ]);
-  const [containment, responseHistory] = focusedThreat
-    ? await Promise.all([source.getContainmentState(focusedThreat.employeeId), source.getResponseHistory(focusedThreat.employeeId)])
-    : [null, { items: [] }];
-  const total = counts.alerts;
-
-  return (
-    <div className="mx-auto max-w-[1600px] space-y-5">
-      <section className="flex flex-col gap-4 border-b border-border pb-5 md:flex-row md:items-end md:justify-between">
-        <div><div className="tech-label">Sentinel / Triage</div><h1 className="mt-2 text-[24px] font-bold tracking-[-0.03em]">Alert Investigation</h1><p className="mt-1 text-[12px] text-[var(--text-secondary)]">Prioritised alerts with explainable evidence and investigation context.</p></div>
-        <div aria-live="polite" className="font-mono text-[11px] text-[var(--text-muted)]"><span className="text-foreground">{threats.length}</span> / {total} alerts</div>
-      </section>
-
-      <ThreatFilterBar q={q} risk={risk} status={status} />
-      <ThreatQueue threats={threats} focusedId={focus} />
-      {focusedThreat && containment && <>
-        <InvestigationDrawer label={`Investigation for ${focusedThreat.alertId}`}>
-          <div className="mb-5 flex items-start justify-between gap-4 border-b border-border pb-4"><div><div className="tech-label text-[var(--accent)]">Investigation workspace</div><h2 className="mt-2 text-[19px] font-bold tracking-[-0.03em]">{focusedThreat.employeeName} · {focusedThreat.title}</h2><p className="mt-1 font-mono text-[9px] text-[var(--text-muted)]">{focusedThreat.alertId} · RISK {focusedThreat.riskScore.toFixed(0)} · {focusedThreat.status}</p></div><Link href="/threats" aria-label="Close investigation" className="grid size-9 shrink-0 place-items-center rounded-xl border border-border bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"><X className="size-4" /></Link></div>
-          <div className="mb-5 flex items-center gap-5"><RiskOrb score={focusedThreat.riskScore} label={`${focusedThreat.riskLevel} risk`} /><div><p className="text-sm font-semibold">{focusedThreat.employeeName}</p><p className="mt-1 text-[12px] text-[var(--text-secondary)]">{focusedThreat.primaryEvidence?.reason ?? "No rule evidence persisted"}</p></div></div><div className="space-y-5">{mitre && <ThreatStoryPanel report={mitre} compact />}<ContainmentPanel threat={focusedThreat} initialState={containment} initialHistory={responseHistory.items} mitre={mitre} /></div>
-        </InvestigationDrawer>
-      </>}
-    </div>
-  );
-}
+import { getSentinelDataSource } from "@/data/data-source";
+type Params=Promise<Record<string,string|string[]|undefined>>; const one=(v:string|string[]|undefined)=>Array.isArray(v)?v[0]:v;
+export default async function ThreatMonitor({searchParams}:{searchParams:Params}) { const p=await searchParams; const q=one(p.q)??""; const page=Number(one(p.page)??1); const source=getSentinelDataSource(); const [cert,legacy]=await Promise.all([source.listCertFindings({q,prediction:1,page,pageSize:50}),source.listThreats({q})]); return <div className="mx-auto max-w-[1600px] space-y-5">
+  <header className="border-b border-border pb-5"><div className="tech-label">Detection / source-aware triage</div><h1 className="mt-2 text-2xl font-bold">Threat Monitor</h1><p className="mt-1 text-xs text-[var(--text-secondary)]">QSVC benchmark findings and legacy synthetic alerts remain separate because their scores are not comparable.</p></header>
+  <form className="panel flex gap-2 p-3"><input name="q" defaultValue={q} placeholder="Search user, date or legacy alert" className="control flex-1 px-3"/><button className="control bg-[var(--accent)] px-4 font-semibold text-white">Search</button></form>
+  <section className="panel overflow-hidden"><div className="border-b border-border p-4"><h2 className="text-sm font-semibold">CERT QSVC advisory findings</h2><p className="mt-1 text-[10px] text-[var(--text-muted)]">{cert.coverageBasis} Decision scores are not probabilities.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[900px] text-left"><thead className="border-b border-border text-[9px] uppercase tracking-wider text-[var(--text-muted)]"><tr><th className="p-3">User</th><th>Date</th><th>Source / model</th><th>Observed signals</th><th>Decision score</th><th>Recorded label</th><th></th></tr></thead><tbody className="divide-y divide-border">{cert.items.map(f=><tr key={f.findingId}><td className="p-3 font-mono font-semibold">{f.user}</td><td className="font-mono">{f.date}</td><td><b>{f.model}</b><div className="text-[9px] text-[var(--text-muted)]">{f.source}</div></td><td>{f.observedSignals.map(s=>s.replaceAll("_"," ")).join(", ")||"No selected indicator"}</td><td className="font-mono">{f.decisionScore.toFixed(4)} <span className="text-[var(--text-muted)]">/ {f.decisionThreshold.toFixed(4)}</span></td><td>{f.recordedLabel?"Malicious":"Benign"}</td><td><Link href={`/investigation?user=${f.user}&date=${f.date}&split=test`} className="font-semibold text-[var(--accent)]">Investigate</Link></td></tr>)}</tbody></table></div><div className="flex justify-end gap-3 border-t border-border p-3 text-[10px]">{page>1&&<Link href={`/threats?q=${encodeURIComponent(q)}&page=${page-1}`} className="font-semibold text-[var(--accent)]">Previous</Link>}{page<cert.page.totalPages&&<Link href={`/threats?q=${encodeURIComponent(q)}&page=${page+1}`} className="font-semibold text-[var(--accent)]">Next</Link>}</div></section>
+  <section className="panel p-4"><div className="flex justify-between"><div><h2 className="text-sm font-semibold">Legacy event alerts</h2><p className="mt-1 text-[10px] text-[var(--text-muted)]">Synthetic Attack Lab / SQLite · event-level rules and Isolation Forest risk.</p></div><span className="font-mono text-xs">{legacy.length}</span></div><div className="mt-3 grid gap-2 lg:grid-cols-2">{legacy.slice(0,8).map(a=><Link key={a.alertId} href={`/threats/legacy?focus=${a.alertId}`} className="rounded-lg border border-border p-3 hover:bg-[var(--surface-hover)]"><div className="flex justify-between"><b className="text-[11px]">{a.title}</b><span className="font-mono text-[10px]">risk {a.riskScore.toFixed(0)}</span></div><p className="mt-1 text-[9px] text-[var(--text-muted)]">{a.employeeName} · {a.alertId} · {a.riskLevel}</p></Link>)}</div></section>
+  </div> }

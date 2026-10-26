@@ -36,3 +36,22 @@ def test_cert_replay_does_not_invent_event_or_shield_context(tmp_path) -> None:
     assert result["eventSequenceAvailable"] is False
     assert result["shieldHandoff"] is None
     assert result["simulatedContainment"] is False
+
+
+def test_cert_identity_and_user_day_lists_are_paginated(tmp_path) -> None:
+    service = CertResearchService(tmp_path)
+    service.data_dir.mkdir(parents=True)
+    rows = []
+    for user, date, label in (("U1", "2011-01-01", 0), ("U1", "2011-01-02", 1), ("U2", "2011-01-01", 0)):
+        row = {"user": user, "date": date, "label": label, "scenario": 2 if label else 0,
+               "logon_count": 1, "logon_after_hours_count": label, "usb_connect_count": label,
+               "file_copy_count": label, "email_sent_count": 2, "email_external_recipients": label}
+        rows.append(row)
+    pd.DataFrame(rows[:1]).to_csv(service.data_dir / "train.csv", index=False)
+    pd.DataFrame(rows[1:2]).to_csv(service.data_dir / "validation.csv", index=False)
+    pd.DataFrame(rows[2:]).to_csv(service.data_dir / "test.csv", index=False)
+    users = service.list_users(page_size=1)
+    days = service.list_user_days("U1")
+    assert users["page"] == {"page": 1, "pageSize": 1, "total": 2, "totalPages": 2}
+    assert days["page"]["total"] == 2
+    assert days["source"] == "recorded CERT user-day aggregates"
