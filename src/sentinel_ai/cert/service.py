@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pennylane as qml
 
 from sentinel_ai import config
 from .qsvc import make_state_circuit
@@ -35,6 +36,8 @@ class CertResearchService:
         self.data_dir = self.root / "data" / "processed" / "cert_r4_2"
         self.results_dir = self.root / "experiments" / "cert_qsvc" / "results"
         self.artifact_path = self.root / "artifacts" / "models" / "cert_r4_2_qsvc.pkl"
+        self.vqc_results_dir = self.root / "experiments" / "cert_vqc" / "results"
+        self.vqc_artifact_path = self.vqc_results_dir / "best_vqc_checkpoint.npz"
 
     def status(self) -> dict[str, Any]:
         summary = self._json(self.data_dir / "split_summary.json")
@@ -49,6 +52,9 @@ class CertResearchService:
             "processedDataReady": processed_ready,
             "savedPreprocessingReady": (self.data_dir / "scaler_model.pkl").exists() and (self.data_dir / "pca_model.pkl").exists(),
             "qsvcArtifactReady": model_ready,
+            "vqcArtifactReady": self.vqc_artifact_path.exists(),
+            "rbfSvmArtifactReady": model_ready and self._artifact(str(self.artifact_path)).get("classical_model") is not None,
+            "assessmentPolicy": self._assessment_policy() if model_ready and self.vqc_artifact_path.exists() else None,
             "qsvcRole": "advisory",
             "affectsProductionRisk": False,
             "naturalPositiveRate": float(summary.get("overall", {}).get("overall_positive_rate", 0)) / 100.0,
@@ -63,28 +69,43 @@ class CertResearchService:
     def investigate(self, user: str, date: str, split: str = "test") -> dict[str, Any]:
         row = self._find_row(user, date, split)
         prediction = self._predict(row)
+        vqc = self._predict_vqc(row)
+        classical = self._classical_evidence(row, prediction)
+        policy = self._assessment_policy()
+        verdict = self._apply_policy(policy["selectedPolicy"], prediction["prediction"], vqc["prediction"])
+        agreement = prediction["prediction"] == vqc["prediction"]
         signals = [
             {"feature": name, "value": float(row[name]), "evidenceType": "recorded aggregate"}
             for name in BEHAVIOURAL_SIGNALS if float(row.get(name, 0)) > 0
         ]
         scenario = int(row["scenario"])
         return {
+            "identity": self._identity(str(row["user"])),
             "record": {"user": str(row["user"]), "date": str(row["date"]), "split": split,
                        "label": int(row["label"]), "scenario": scenario,
                        "features": {name: float(row[name]) for name in PCA_FEATURES}},
             "behaviouralEvidence": signals,
-            "classicalEvidence": self._classical_evidence(row, prediction),
+            "classicalEvidence": classical,
             "classification": prediction,
+            "models": {"qsvc": prediction, "vqc": vqc, "rbfSvm": classical["rbfSvm"]},
+            "assessment": {
+                "verdict": "REQUIRES_REVIEW" if verdict else "NO_ADVISORY_ALERT",
+                "prediction": verdict, "policy": policy["selectedPolicy"],
+                "reason": self._verdict_reason(policy["selectedPolicy"], prediction["prediction"], vqc["prediction"]),
+                "quantumAgreement": agreement,
+                "agreementLabel": "AGREE" if agreement else "DISAGREE",
+                "limitations": "Independent uncalibrated model scores are not averaged. Agreement is not proof of correctness.",
+            },
             "alert": {
-                "raised": bool(prediction["prediction"]),
+                "raised": bool(verdict),
                 "advisory": True,
-                "title": "CERT user-day requires investigation" if prediction["prediction"] else "No QSVC alert",
+                "title": "CERT user-day requires review" if verdict else "No advisory alert",
                 "groundTruthUsedForInference": False,
                 "groundTruthVisibleForResearchEvaluation": True,
             },
             "threatContext": {
                 "recorded": "Prepared CERT employee/day activity aggregates and research label.",
-                "inferred": "QSVC class and local feature influence; no event order or access relationship is inferred.",
+                "inferred": "Frozen QSVC, VQC and RBF-SVM outputs; no event order or access relationship is inferred.",
                 "shieldEligible": False,
                 "shieldHandoff": None,
                 "reason": "The user-day schema contains no validated access-control or attack-graph relationships.",
@@ -119,10 +140,12 @@ class CertResearchService:
             login_after_hours=("logon_after_hours_count", "sum"), usb_connections=("usb_connect_count", "sum"),
             files_copied=("file_copy_count", "sum"), emails_sent=("email_sent_count", "sum"),
         ).reset_index()
+        grouped["display_label"] = grouped["user"].astype(str).map(lambda value: self._identity(value)["displayLabel"])
         if q:
-            grouped = grouped[grouped["user"].astype(str).str.contains(q, case=False, regex=False)]
+            grouped = grouped[grouped["user"].astype(str).str.contains(q, case=False, regex=False) |
+                              grouped["display_label"].str.contains(q, case=False, regex=False)]
         total = len(grouped); start = (page - 1) * page_size
-        items = [{"user": str(row.user), "userDays": int(row.user_days), "firstDate": str(row.first_date),
+        items = [{"user": str(row.user), "identity": self._identity(str(row.user)), "userDays": int(row.user_days), "firstDate": str(row.first_date),
                   "lastDate": str(row.last_date), "labelledMaliciousDays": int(row.labelled_malicious_days),
                   "activityTotals": {"afterHoursLogons": int(row.login_after_hours), "usbConnections": int(row.usb_connections),
                                      "filesCopied": int(row.files_copied), "emailsSent": int(row.emails_sent)}}
@@ -138,7 +161,7 @@ class CertResearchService:
         rows = rows.sort_values("date", ascending=False); total = len(rows); offset = (page - 1) * page_size
         items = []
         for row in rows.iloc[offset:offset + page_size].itertuples(index=False):
-            items.append({"user": str(row.user), "date": str(row.date), "split": str(row.split),
+            items.append({"user": str(row.user), "identity": self._identity(str(row.user)), "date": str(row.date), "split": str(row.split),
                           "label": int(row.label), "scenario": int(row.scenario),
                           "activity": {"logons": int(row.logon_count), "afterHoursLogons": int(row.logon_after_hours_count),
                                        "usbConnections": int(row.usb_connect_count), "filesCopied": int(row.file_copy_count),
@@ -148,19 +171,27 @@ class CertResearchService:
     def list_findings(self, q: str = "", prediction: int | None = 1, page: int = 1, page_size: int = 50) -> dict[str, Any]:
         cohort = pd.read_csv(self.data_dir / "quantum_benchmark" / "qsvc" / "test.csv")
         predictions = pd.read_csv(self.results_dir / "predictions.csv")
-        joined = pd.concat([cohort.reset_index(drop=True), predictions.reset_index(drop=True)], axis=1)
+        vqc_predictions = pd.read_csv(self.vqc_results_dir / "predictions.csv")
+        joined = pd.concat([cohort.reset_index(drop=True), predictions.reset_index(drop=True),
+                            vqc_predictions[["vqc_score", "vqc_prediction"]].reset_index(drop=True)], axis=1)
+        policy = self._assessment_policy()
+        joined["assessment_prediction"] = [self._apply_policy(policy["selectedPolicy"], int(q), int(v))
+                                             for q, v in zip(joined["qsvc_prediction"], joined["vqc_prediction"])]
         if q:
             joined = joined[joined["user"].astype(str).str.contains(q, case=False, regex=False) |
                             joined["date"].astype(str).str.contains(q, case=False, regex=False)]
-        if prediction is not None: joined = joined[joined["qsvc_prediction"] == prediction]
+        if prediction is not None: joined = joined[joined["assessment_prediction"] == prediction]
         total = len(joined); offset = (page - 1) * page_size; items = []
         for row in joined.iloc[offset:offset + page_size].itertuples(index=False):
             signals = [name for name in BEHAVIOURAL_SIGNALS if float(getattr(row, name)) > 0]
-            items.append({"findingId": f"CERT-QSVC-{row.user}-{row.date}", "user": str(row.user), "date": str(row.date),
-                          "source": "CERT r4.2 balanced benchmark", "model": "PennyLane QSVC",
-                          "prediction": int(row.qsvc_prediction), "decisionScore": float(row.qsvc_decision_score),
+            items.append({"findingId": f"CERT-ASSESS-{row.user}-{row.date}", "user": str(row.user),
+                          "identity": self._identity(str(row.user)), "date": str(row.date),
+                          "source": "CERT r4.2 balanced benchmark", "model": "Quantum Threat Assessment",
+                          "prediction": int(row.assessment_prediction), "decisionScore": float(row.qsvc_decision_score),
                           "decisionThreshold": -0.6163942499022663, "scoreIsProbability": False,
-                          "recordedLabel": int(row.label), "observedSignals": signals})
+                          "qsvcPrediction": int(row.qsvc_prediction), "vqcPrediction": int(row.vqc_prediction),
+                          "quantumAgreement": int(row.qsvc_prediction) == int(row.vqc_prediction),
+                          "policy": policy["selectedPolicy"], "recordedLabel": int(row.label), "observedSignals": signals})
         return {"items": items, "page": self._page(page, page_size, total), "scoringCoverage": 100,
                 "coverageBasis": "Persisted balanced test benchmark only; not all CERT user-days.", "advisory": True}
 
@@ -173,6 +204,7 @@ class CertResearchService:
         return {"dataset": "CERT r4.2", "cohort": {"train": 250, "validation": 100, "test": 100,
                 "balanced": True, "naturalPrevalenceValidated": False},
                 "models": vqc.get("metrics", qsvc.get("metrics", {})),
+                "fusionPolicy": self._assessment_policy(),
                 "circuits": {"qsvc": qsvc_config.get("quantum", {}), "vqc": vqc_config.get("vqc", {})},
                 "limitations": vqc.get("limitations", qsvc.get("limitations", [])),
                 "claim": "No established quantum advantage; exact noiseless simulation only."}
@@ -226,6 +258,77 @@ class CertResearchService:
         return {"transparentUserDayRules": rules, "rbfSvm": comparison,
                 "agreementWithQsvc": comparison is not None and comparison["prediction"] == prediction["prediction"],
                 "note": "Legacy event Isolation Forest/rules are not applied because their schema is incompatible."}
+
+    def _predict_vqc(self, row: pd.Series) -> dict[str, Any]:
+        if not self.vqc_artifact_path.exists():
+            return {"model": "PennyLane VQC", "available": False, "reason": "Saved checkpoint is missing"}
+        artifact = self._vqc_artifact(str(self.vqc_artifact_path))
+        values = row.loc[list(PCA_FEATURES)].to_numpy(dtype=float)
+        span = np.where(artifact["scaler_max"] - artifact["scaler_min"] == 0, 1.0,
+                        artifact["scaler_max"] - artifact["scaler_min"])
+        scaled = np.clip((values - artifact["scaler_min"]) / span, 0.0, 1.0) * (2 * np.pi) - np.pi
+        score = float(np.mean(self._vqc_circuit()(scaled, artifact["weights"])))
+        threshold = float(artifact["threshold"])
+        return {"model": "PennyLane VQC", "method": "Trainable quantum circuit", "available": True,
+                "prediction": int(score >= threshold), "decisionScore": score,
+                "decisionThreshold": threshold, "scoreIsProbability": False, "advisory": True,
+                "circuit": {"qubits": 4, "layers": 2, "measurement": "mean Pauli-Z expectation"}}
+
+    @lru_cache(maxsize=1)
+    def _assessment_policy(self) -> dict[str, Any]:
+        frame = pd.read_csv(self.data_dir / "quantum_benchmark" / "qsvc" / "val.csv")
+        qsvc_artifact = self._artifact(str(self.artifact_path))
+        values = frame.loc[:, list(PCA_FEATURES)].to_numpy(float)
+        scaled = qsvc_artifact["input_scaler"].transform(values)
+        states = np.asarray([self._state(row) for row in scaled])
+        kernel = np.abs(states @ qsvc_artifact["train_states"].conj().T) ** 2
+        qs = qsvc_artifact["model"].decision_function(kernel) >= float(qsvc_artifact["threshold"])
+        vqc = np.asarray([self._predict_vqc(row)["prediction"] for _, row in frame.iterrows()], dtype=bool)
+        labels = frame["label"].to_numpy(bool)
+        candidates = {"QSVC_LEAD": qs, "VQC_ONLY": vqc, "AND_FUSION": qs & vqc, "OR_FUSION": qs | vqc}
+        evidence = {}
+        for name, values_ in candidates.items():
+            fp = int(np.sum(values_ & ~labels)); fn = int(np.sum(~values_ & labels))
+            evidence[name] = {"falsePositives": fp, "falseNegatives": fn, "securityCost": 5 * fn + fp}
+        selected = min(candidates, key=lambda name: (evidence[name]["securityCost"], name != "QSVC_LEAD"))
+        return {"selectedPolicy": selected, "objective": "Minimize 5 × missed threats + false alerts on validation only",
+                "validationRows": len(frame), "evidence": evidence, "testLabelsUsedForSelection": False}
+
+    @staticmethod
+    def _apply_policy(policy: str, qsvc: int, vqc: int) -> int:
+        return int({"QSVC_LEAD": bool(qsvc), "VQC_ONLY": bool(vqc), "AND_FUSION": bool(qsvc and vqc),
+                    "OR_FUSION": bool(qsvc or vqc)}[policy])
+
+    @staticmethod
+    def _verdict_reason(policy: str, qsvc: int, vqc: int) -> str:
+        if policy == "OR_FUSION": return "Review is advised when either independent quantum detector alerts."
+        if policy == "AND_FUSION": return "Review is advised only when both independent quantum detectors alert."
+        if policy == "VQC_ONLY": return "The validation-selected policy uses the VQC verdict; QSVC remains visible as independent evidence."
+        return "QSVC is the validation-selected lead verdict; VQC remains visible as independent evidence."
+
+    @lru_cache(maxsize=2048)
+    def _identity(self, user: str) -> dict[str, str]:
+        users = sorted(self._catalog()["user"].astype(str).unique())
+        ordinal = users.index(user) + 1
+        return {"displayLabel": f"Identity {ordinal:04d}", "sourceId": user,
+                "monogram": f"I{ordinal:04d}", "source": "Deterministic UI label; not source-derived identity metadata"}
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _vqc_artifact(path: str) -> dict[str, np.ndarray]:
+        with np.load(path) as checkpoint:
+            return {key: np.asarray(checkpoint[key]).copy() for key in checkpoint.files}
+
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def _vqc_circuit():
+        device = qml.device("default.qubit", wires=4, shots=None)
+        @qml.qnode(device, interface=None, diff_method=None)
+        def circuit(features, weights):
+            qml.AngleEmbedding(features, wires=range(4), rotation="Y")
+            qml.StronglyEntanglingLayers(weights, wires=range(4), ranges=[1, 1])
+            return tuple(qml.expval(qml.PauliZ(wire)) for wire in range(4))
+        return circuit
 
     @staticmethod
     def _state(angles: np.ndarray) -> np.ndarray:

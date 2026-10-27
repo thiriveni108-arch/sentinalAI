@@ -518,6 +518,28 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
             training_scope="Fixed balanced chronological benchmark cohort; runtime accepts prepared CERT user-days only.",
             estimator_configuration={"qubits": 4, "C": 1.0, "kernel": "PennyLane exact fidelity", "advisory": True},
             anomaly_definition="Validation-thresholded QSVC decision score; not a calibrated probability and not validated for natural alert burden.",
+        ), ModelMetadataDto(
+            name="CERT r4.2 PennyLane VQC (advisory)",
+            implementation="PennyLane AngleEmbedding + StronglyEntanglingLayers",
+            version="cert-r4.2-vqc-v1",
+            status="ready" if cert.vqc_artifact_path.exists() else "artifact-missing",
+            feature_schema_version="cert-r4.2-user-day-pca4-v1",
+            feature_order=["pca_1", "pca_2", "pca_3", "pca_4"],
+            training_rows=250,
+            training_scope="Fixed balanced chronological benchmark; frozen checkpoint and train-only MinMax scaling.",
+            estimator_configuration={"qubits": 4, "layers": 2, "measurement": "mean Pauli-Z", "advisory": True},
+            anomaly_definition="Validation-thresholded mean Pauli-Z score; not a calibrated probability.",
+        ), ModelMetadataDto(
+            name="CERT r4.2 RBF-SVM comparator",
+            implementation="sklearn.svm.SVC(kernel='rbf')",
+            version="cert-r4.2-rbf-svm-v1",
+            status="ready" if cert.artifact_path.exists() else "artifact-missing",
+            feature_schema_version="cert-r4.2-user-day-pca4-v1",
+            feature_order=["pca_1", "pca_2", "pca_3", "pca_4"],
+            training_rows=250,
+            training_scope="Same fixed benchmark cohort; independent classical verification baseline.",
+            estimator_configuration={"kernel": "RBF", "advisory": True},
+            anomaly_definition="Validation-thresholded SVM decision score; not a calibrated probability.",
         )]
 
     @app.get("/api/models/evaluation", response_model=dict[str, object])
