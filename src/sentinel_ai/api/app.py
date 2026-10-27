@@ -177,6 +177,35 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         try: return incidents.plan_response(incident_id)
         except KeyError as error: raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
 
+    @app.post("/api/incidents/{incident_id}/shield-act/plan", response_model=dict[str, object])
+    def plan_adaptive_response(incident_id: str, payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
+        try:
+            return incidents.plan_adaptive_response(incident_id, str(payload.get("familyId", "file-collection")))
+        except KeyError as error:
+            raise HTTPException(404, {"code": "incident_or_family_not_found", "message": str(error).strip("'")}) from error
+        except ValueError as error:
+            raise HTTPException(422, {"code": "invalid_shield_act_plan", "message": str(error)}) from error
+
+    @app.post("/api/incidents/{incident_id}/shield-act/actions/{action_id}/execute", response_model=dict[str, object])
+    def execute_adaptive_action(incident_id: str, action_id: str) -> dict[str, object]:
+        try:
+            return incidents.execute_adaptive_action(incident_id, action_id)
+        except KeyError as error:
+            raise HTTPException(404, {"code": "incident_or_action_not_found", "message": str(error).strip("'")}) from error
+        except ValueError as error:
+            raise HTTPException(422, {"code": "invalid_shield_act_state", "message": str(error)}) from error
+        except PermissionError as error:
+            raise HTTPException(409, {"code": "action_requires_escalation", "message": str(error)}) from error
+
+    @app.post("/api/incidents/{incident_id}/shield-act/actions/{action_id}/rollback", response_model=dict[str, object])
+    def rollback_adaptive_action(incident_id: str, action_id: str) -> dict[str, object]:
+        try:
+            return incidents.rollback_adaptive_action(incident_id, action_id)
+        except KeyError as error:
+            raise HTTPException(404, {"code": "incident_or_action_not_found", "message": str(error).strip("'")}) from error
+        except ValueError as error:
+            raise HTTPException(422, {"code": "rollback_unavailable", "message": str(error)}) from error
+
     @app.get("/api/cert/status", response_model=dict[str, object])
     def cert_status() -> dict[str, object]:
         """Describe the primary CERT research dataset and frozen QSVC boundary."""

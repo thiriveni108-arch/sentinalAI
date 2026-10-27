@@ -25,11 +25,11 @@ export function AppShell({ children, system }: { children: React.ReactNode; syst
         <header className="sticky top-0 z-30 border-b border-border bg-white/88 backdrop-blur-xl">
           <div className="flex h-[64px] items-center gap-3 px-4 md:px-7">
             <Link href="/" className="shrink-0 font-semibold">SentinelAI <span className="quantum-text">Q</span></Link>
-            <form action="/threats" className="relative ml-auto w-full max-w-[360px]">
+            <form action="/threat-investigation" className="relative ml-auto w-full max-w-[360px]">
               <Search aria-hidden="true" className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
               <input name="q" aria-label="Search threats" placeholder="Search alerts or employees" className="control w-full bg-[var(--surface-elevated)] pl-9 pr-3 placeholder:text-[var(--text-muted)]" />
             </form>
-            <Link href="/threats" aria-label="Open threat monitor" className="grid size-9 place-items-center rounded-lg border border-border bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"><Bell className="size-4" /></Link>
+            <Link href="/threat-investigation" aria-label="Open threat investigation" className="grid size-9 place-items-center rounded-lg border border-border bg-white text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"><Bell className="size-4" /></Link>
             <div className="hidden border-l border-border pl-4 sm:block"><span className="flex items-center gap-1.5 text-[11px] font-semibold"><span className="size-1.5 rounded-full bg-[var(--accent)]" />Data · {system.data.status}</span><span className="text-[9px] text-[var(--text-muted)]">{system.data.label} · {system.model.status}</span></div>
           </div>
           <div className="border-t border-border lg:hidden"><SidebarNav compact /></div>

@@ -29,7 +29,7 @@ export async function createCertIncident(formData: FormData) {
   if (!user || !date) redirect("/attack-lab?error=invalid_cert_record");
   try {
     const incident = await getSentinelDataSource().createIncident({ user, date, split: "test", scenario: "suspicious-file-collection" });
-    redirect(`/investigation?incident=${encodeURIComponent(incident.incidentId)}`);
+    redirect(`/threat-investigation?incident=${encodeURIComponent(incident.incidentId)}`);
   } catch (error) {
     if (error instanceof SentinelApiError) redirect(`/attack-lab?error=${encodeURIComponent(error.code)}`);
     throw error;
@@ -41,6 +41,45 @@ export async function planIncidentShield(formData: FormData) {
   if (!incidentId) redirect("/shield?error=incident_required");
   try {
     await getSentinelDataSource().planIncidentResponse(incidentId);
+    redirect(`/shield?incident=${encodeURIComponent(incidentId)}`);
+  } catch (error) {
+    if (error instanceof SentinelApiError) redirect(`/shield?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);
+    throw error;
+  }
+}
+
+export async function planAdaptiveShield(formData: FormData) {
+  const incidentId = value(formData, "incidentId");
+  const familyId = value(formData, "familyId") || "file-collection";
+  if (!incidentId) redirect("/shield?error=incident_required");
+  try {
+    await getSentinelDataSource().planAdaptiveResponse(incidentId, familyId);
+    redirect(`/shield?incident=${encodeURIComponent(incidentId)}`);
+  } catch (error) {
+    if (error instanceof SentinelApiError) redirect(`/shield?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);
+    throw error;
+  }
+}
+
+export async function executeAdaptiveShield(formData: FormData) {
+  const incidentId = value(formData, "incidentId");
+  const actionId = value(formData, "actionId");
+  if (!incidentId || !actionId) redirect("/shield?error=action_required");
+  try {
+    await getSentinelDataSource().executeAdaptiveAction(incidentId, actionId);
+    redirect(`/shield?incident=${encodeURIComponent(incidentId)}`);
+  } catch (error) {
+    if (error instanceof SentinelApiError) redirect(`/shield?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);
+    throw error;
+  }
+}
+
+export async function rollbackAdaptiveShield(formData: FormData) {
+  const incidentId = value(formData, "incidentId");
+  const actionId = value(formData, "actionId");
+  if (!incidentId || !actionId) redirect("/shield?error=action_required");
+  try {
+    await getSentinelDataSource().rollbackAdaptiveAction(incidentId, actionId);
     redirect(`/shield?incident=${encodeURIComponent(incidentId)}`);
   } catch (error) {
     if (error instanceof SentinelApiError) redirect(`/shield?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);

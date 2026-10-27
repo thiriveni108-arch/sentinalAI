@@ -18,6 +18,7 @@ from sentinel_ai.cert.service import BEHAVIOURAL_FEATURES, PCA_FEATURES, CertRes
 from sentinel_ai.shield.models import Intervention, Scenario, ShieldEdge, ShieldNode
 from sentinel_ai.shield.paths import enumerate_attack_paths
 from sentinel_ai.shield.service import ShieldService
+from sentinel_ai.shield.act import AdaptiveScenarioEngine, ConsequenceModel, consequence_features, exact_consequence
 
 
 class IncidentService:
@@ -28,6 +29,8 @@ class IncidentService:
         self.path = Path(database_path or config.DEFAULT_DATABASE_PATH)
         self.cert = cert or CertResearchService()
         self.shield = shield or ShieldService()
+        self.act_engine = AdaptiveScenarioEngine()
+        self.consequence_model = ConsequenceModel()
         self._initialize()
 
     def _connection(self):
@@ -111,6 +114,114 @@ class IncidentService:
                                     "detail": "Exact, greedy, and QAOA solvers executed on the incident-associated modeled graph."})
         self._save(document)
         return document
+
+    def plan_adaptive_response(self, incident_id: str, family_id: str = "file-collection") -> dict[str, Any]:
+        document = self.get(incident_id)
+        existing = document.get("shieldAct")
+        if existing and existing.get("status") in {"PLANNED", "IN_PROGRESS", "COMPLETED", "ESCALATED"}:
+            return document
+        evidence = self._act_evidence(document, family_id)
+        try:
+            scenario = self.act_engine.build(family_id, incident_id, evidence, allow_assumptions=True)
+        except (KeyError, ValueError) as error:
+            document["shieldAct"] = {"status": "ESCALATED", "familyId": family_id, "reason": str(error),
+                                     "events": [self._act_event("workflow.escalated", incident_id, {"reason": str(error)})]}
+            self._save(document); return document
+        paths = enumerate_attack_paths(scenario)
+        if not paths:
+            reason = "Available evidence and scenario definition produced no bounded attack paths."
+            document["shieldAct"] = {"status": "ESCALATED", "familyId": family_id, "reason": reason,
+                                     "events": [self._act_event("workflow.escalated", incident_id, {"reason": reason})]}
+            self._save(document); return document
+        alternatives = []
+        for action in scenario.actions:
+            features = consequence_features(scenario, action)
+            exact = exact_consequence(scenario, action)
+            qml = self.consequence_model.predict(family_id, features)
+            eligible = bool(action.reversible and not action.approval_required and action.interrupts and exact["operationalDisruption"] <= 4.0)
+            alternatives.append({"actionId": action.action_id, "actionType": action.action_type, "target": action.target,
+                                 "cost": action.cost, "reversible": action.reversible, "approvalRequired": action.approval_required,
+                                 "interrupts": list(action.interrupts), "features": dict(zip(("action_cost", "coverage_ratio", "max_asset_criticality", "dependency_count"), features.tolist())),
+                                 "qml": qml, "exact": exact, "automationEligible": eligible,
+                                 "rationale": "Eligible reversible low-disruption modeled action." if eligible else "Requires escalation or does not cover a modeled path safely."})
+        exact_plan = self.shield.analyze_scenario(scenario, include_quantum=True)
+        preferred = next((item for item in alternatives if item["actionId"] in {a["action_id"] for a in exact_plan["recommendation"]["selectedActions"]} and item["automationEligible"]), None)
+        now = datetime.now(timezone.utc).isoformat()
+        document["shieldAct"] = {
+            "status": "PLANNED", "familyId": family_id, "scenarioVersion": "shield-act-scenario-v1",
+            "incidentId": incident_id, "context": {"known": list(evidence), "inferred": ["controlled attack family"],
+                                                     "assumed": ["authorization, resource and dependency relationships are hypothetical"]},
+            "graph": exact_plan["graph"], "attackPaths": exact_plan["attackPaths"], "alternatives": alternatives,
+            "optimization": {"exact": exact_plan["solvers"]["exact"], "greedy": exact_plan["solvers"]["scalable"],
+                             "qaoa": exact_plan["solvers"]["qaoaCandidate"], "quantum": exact_plan["quantum"]},
+            "recommendation": {"actionId": preferred["actionId"] if preferred else None,
+                               "decision": "AUTO_ELIGIBLE" if preferred else "ESCALATE",
+                               "rationale": preferred["rationale"] if preferred else "No safe reversible exact-validated action is automation eligible."},
+            "state": {"appliedActions": [], "remainingPaths": [path["path_id"] for path in exact_plan["attackPaths"]],
+                      "iteration": 0, "maxIterations": 3, "maxActions": 3, "rollbackAvailable": []},
+            "events": [self._act_event("response.requested", incident_id, {"familyId": family_id}),
+                       self._act_event("response.authorized" if preferred else "response.denied", incident_id,
+                                       {"actionId": preferred["actionId"] if preferred else None})],
+            "feedback": [], "plannedAt": now,
+        }
+        document["updatedAt"] = now; self._save(document); return document
+
+    def execute_adaptive_action(self, incident_id: str, action_id: str) -> dict[str, Any]:
+        document = self.get(incident_id); act = document.get("shieldAct")
+        if not act: raise ValueError("SHIELD-ACT planning must be completed first.")
+        if action_id in act["state"]["appliedActions"]: return document
+        candidate = next((item for item in act["alternatives"] if item["actionId"] == action_id), None)
+        if candidate is None: raise KeyError(action_id)
+        if not candidate["automationEligible"]: raise PermissionError("Action requires explicit escalation and cannot be auto-applied.")
+        state = act["state"]
+        if state["iteration"] >= state["maxIterations"] or len(state["appliedActions"]) >= state["maxActions"]:
+            act["status"] = "ESCALATED"; act["reason"] = "Adaptive response safety limit reached."
+            act["events"].append(self._act_event("workflow.escalated", incident_id, {"reason": act["reason"]}))
+            self._save(document); return document
+        before = list(state["remainingPaths"]); interrupted = set(candidate["interrupts"])
+        state["remainingPaths"] = [item for item in before if item not in interrupted]
+        state["appliedActions"].append(action_id); state["iteration"] += 1
+        if candidate["reversible"]: state["rollbackAvailable"].append(action_id)
+        observed = {"remainingPaths": list(state["remainingPaths"]), "exposureReduced": len(before) - len(state["remainingPaths"]),
+                    "operationalDisruption": candidate["exact"]["operationalDisruption"]}
+        act["feedback"].append({"scenarioVersion": act["scenarioVersion"], "incidentId": incident_id, "actionId": action_id,
+                                "preActionState": {"remainingPaths": before}, "predictedConsequence": candidate["qml"],
+                                "observedConsequence": observed, "effective": len(state["remainingPaths"]) < len(before)})
+        act["events"].append(self._act_event("simulated_action.executed", incident_id, {"actionId": action_id}))
+        act["events"].append(self._act_event("outcome.observed", incident_id, observed))
+        if not state["remainingPaths"]:
+            act["status"] = "COMPLETED"; act["recommendation"] = {"actionId": None, "decision": "STOP", "rationale": "All modeled critical paths are interrupted."}
+            act["events"].append(self._act_event("workflow.completed", incident_id, observed))
+        else:
+            next_action = next((item for item in act["alternatives"] if item["automationEligible"] and item["actionId"] not in state["appliedActions"] and set(item["interrupts"]) & set(state["remainingPaths"])), None)
+            act["status"] = "IN_PROGRESS" if next_action else "ESCALATED"
+            act["recommendation"] = {"actionId": next_action["actionId"] if next_action else None,
+                                     "decision": "CONTINUE" if next_action else "ESCALATE",
+                                     "rationale": "Additional modeled exposure remains." if next_action else "No remaining safe automated action covers the residual path."}
+            act["events"].append(self._act_event("reassessment.requested", incident_id, {"remainingPaths": state["remainingPaths"]}))
+        now = datetime.now(timezone.utc).isoformat(); document["updatedAt"] = now
+        document["history"].append({"at": now, "stage": "ADAPTIVE_RESPONSE", "detail": f"Simulated {action_id}; {len(state['remainingPaths'])} modeled paths remain."})
+        self._save(document); return document
+
+    def rollback_adaptive_action(self, incident_id: str, action_id: str) -> dict[str, Any]:
+        document = self.get(incident_id); act = document.get("shieldAct")
+        if not act or action_id not in act["state"]["rollbackAvailable"]: raise ValueError("Rollback is not available for this action.")
+        candidate = next(item for item in act["alternatives"] if item["actionId"] == action_id)
+        act["state"]["appliedActions"].remove(action_id); act["state"]["rollbackAvailable"].remove(action_id)
+        act["state"]["remainingPaths"] = sorted(set(act["state"]["remainingPaths"]) | set(candidate["interrupts"]))
+        act["status"] = "IN_PROGRESS"; act["events"].append(self._act_event("simulated_action.rolled_back", incident_id, {"actionId": action_id}))
+        document["updatedAt"] = datetime.now(timezone.utc).isoformat(); self._save(document); return document
+
+    @staticmethod
+    def _act_event(event_type: str, incident_id: str, payload: dict[str, Any]) -> dict[str, Any]:
+        return {"eventType": event_type, "incidentId": incident_id, "at": datetime.now(timezone.utc).isoformat(), "payload": payload}
+
+    @staticmethod
+    def _act_evidence(document: dict[str, Any], family_id: str) -> dict[str, Any]:
+        if family_id == "file-collection":
+            injected = document["injectedEvidence"]
+            return {"file_copy_count": injected.get("file_copy_count"), "usb_connect_count": injected.get("usb_connect_count")}
+        return {"credential_signal": None, "session_signal": None} if family_id == "credential-compromise" else {"service_signal": None, "authorization_signal": None}
 
     def get(self, incident_id: str) -> dict[str, Any]:
         with self._connection() as connection:
