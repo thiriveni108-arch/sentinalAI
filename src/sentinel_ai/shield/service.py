@@ -23,6 +23,10 @@ class ShieldService:
         scenario = scenarios().get(scenario_id)
         if scenario is None:
             raise KeyError(scenario_id)
+        return self.analyze_scenario(scenario, include_quantum)
+
+    def analyze_scenario(self, scenario, include_quantum: bool = True) -> dict:
+        """Analyze a validated static or incident-associated modeled scenario."""
         started = perf_counter()
         paths = enumerate_attack_paths(scenario)
         exact = solve_exact(paths, scenario.actions)
@@ -56,7 +60,12 @@ class ShieldService:
             "quantum": quantum,
             "counterfactuals": comparisons,
             "decisionPolicy": recommendation(scenario.risk_score, len(scenario.evidence), max_criticality,
-                                             all(a.reversible for a in selected_actions), production_safe.feasible),
+                                             all(a.reversible for a in selected_actions), production_safe.feasible)
+                              if scenario.risk_score is not None else {
+                                  "recommendation": "Analyst review required",
+                                  "reasoning": ["No numerical incident risk score is invented for the CERT exercise.",
+                                                "Exact classical feasibility is authoritative for this modeled scenario."],
+                              },
             "limitations": ["Attack-path enumeration is bounded and cannot prove absence of unmodeled routes.",
                             "Effects depend on the explicit token, authorization, and enforcement assumptions shown per action.",
                             "All actions are simulations; no production identity, endpoint, network, or data control is changed.",

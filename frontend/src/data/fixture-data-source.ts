@@ -284,4 +284,8 @@ export const fixtureDataSource: SentinelDataSource = {
   getCertInvestigation: async () => null,
   getCertReplay: async () => null,
   getCertBenchmarks: async () => ({ dataset: "CERT r4.2", cohort: { train: 250, validation: 100, test: 100, balanced: true, naturalPrevalenceValidated: false }, models: {}, circuits: {}, fusionPolicy: { selectedPolicy: "UNAVAILABLE", objective: "Live API required", validationRows: 0, evidence: {}, testLabelsUsedForSelection: false }, limitations: ["Live API required to read persisted experiment metrics."], claim: "No established quantum advantage." }),
+  listIncidents: async () => ({ items: [], summary: { total: 0, detected: 0, responsePlanned: 0 } }),
+  getIncident: async () => null,
+  createIncident: async () => { throw new Error("Live API required"); },
+  planIncidentResponse: async () => { throw new Error("Live API required"); },
 };

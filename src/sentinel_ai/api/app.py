@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -73,6 +73,7 @@ from sentinel_ai.response.models import ContainmentState, ResponseAction, Respon
 from sentinel_ai.response.service import ResponseActionFailed
 from sentinel_ai.quantum import QuantumAnalyzer
 from sentinel_ai.cert import CertResearchService
+from sentinel_ai.incidents import IncidentService
 
 
 logger = logging.getLogger(__name__)
@@ -150,6 +151,31 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     from sentinel_ai.shield import ShieldService
     shield = ShieldService()
     cert = CertResearchService()
+    incidents = IncidentService(resolved_database_path, cert, shield)
+
+    @app.post("/api/incidents", response_model=dict[str, object], status_code=201)
+    def create_incident(payload: Annotated[dict[str, object], Body()]) -> dict[str, object]:
+        try:
+            return incidents.create(str(payload.get("user", "")), str(payload.get("date", "")),
+                                    str(payload.get("split", "test")), str(payload.get("scenario", IncidentService.SCENARIO)))
+        except KeyError as error:
+            raise HTTPException(404, {"code": "cert_user_day_not_found", "message": str(error).strip("'")}) from error
+        except ValueError as error:
+            raise HTTPException(422, {"code": "invalid_incident", "message": str(error)}) from error
+
+    @app.get("/api/incidents", response_model=dict[str, object])
+    def list_incidents(detected: bool | None = None, limit: Annotated[int, Query(ge=1, le=100)] = 50) -> dict[str, object]:
+        return {"items": incidents.list(detected, limit), "summary": incidents.summary()}
+
+    @app.get("/api/incidents/{incident_id}", response_model=dict[str, object])
+    def get_incident(incident_id: str) -> dict[str, object]:
+        try: return incidents.get(incident_id)
+        except KeyError as error: raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
+
+    @app.post("/api/incidents/{incident_id}/shield", response_model=dict[str, object])
+    def plan_incident_response(incident_id: str) -> dict[str, object]:
+        try: return incidents.plan_response(incident_id)
+        except KeyError as error: raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
 
     @app.get("/api/cert/status", response_model=dict[str, object])
     def cert_status() -> dict[str, object]:

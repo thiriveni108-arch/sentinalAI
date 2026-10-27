@@ -1,5 +1,5 @@
 import "server-only";
-import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks } from "@/domain/sentinel";
+import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks, CertIncident, IncidentList } from "@/domain/sentinel";
 
 import type { SentinelDataSource } from "@/data/sentinel-data-source";
 
@@ -202,4 +202,8 @@ export class HttpDataSource implements SentinelDataSource {
   async getCertInvestigation(user: string, date: string, split = "test") { try { return await this.get<CertInvestigation>(`/api/cert/user-days/${encodeURIComponent(user)}/${encodeURIComponent(date)}?split=${encodeURIComponent(split)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
   async getCertReplay(user: string, split = "test") { try { return await this.get<CertReplay>(`/api/cert/replay/${encodeURIComponent(user)}?split=${encodeURIComponent(split)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
   getCertBenchmarks() { return this.get<CertBenchmarks>("/api/cert/benchmarks"); }
+  listIncidents(detected?: boolean) { return this.get<IncidentList>(`/api/incidents${queryString({ detected })}`); }
+  async getIncident(incidentId: string) { try { return await this.get<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
+  createIncident(input: { user: string; date: string; split: string; scenario: string }) { return this.post<CertIncident>("/api/incidents", input); }
+  planIncidentResponse(incidentId: string) { return this.post<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}/shield`, {}); }
 }

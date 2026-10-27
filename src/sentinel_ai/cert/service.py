@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import pickle
+from time import perf_counter
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,17 @@ BEHAVIOURAL_SIGNALS = (
     "logon_after_hours_count", "usb_after_hours_count", "file_after_hours_count",
     "file_copy_count", "file_exe_count", "email_after_hours_count",
     "email_external_recipients", "email_total_attachments",
+)
+BEHAVIOURAL_FEATURES = (
+    "is_weekend", "logon_count", "logoff_count", "logon_after_hours_count",
+    "logoff_after_hours_count", "first_logon_hour", "last_logoff_hour",
+    "work_duration_hours", "logon_pc_count", "usb_connect_count",
+    "usb_disconnect_count", "usb_after_hours_count", "usb_pc_count",
+    "file_copy_count", "file_after_hours_count", "file_exe_count",
+    "file_doc_count", "file_other_count", "file_pc_count", "email_sent_count",
+    "email_after_hours_count", "email_total_size", "email_mean_size",
+    "email_total_attachments", "email_max_attachments", "email_external_recipients",
+    "email_internal_recipients", "email_distinct_recipients",
 )
 
 
@@ -111,6 +123,52 @@ class CertResearchService:
                 "reason": "The user-day schema contains no validated access-control or attack-graph relationships.",
             },
         }
+
+    def record(self, user: str, date: str, split: str = "test") -> pd.Series:
+        """Return a defensive copy of one canonical prepared employee-day."""
+        return self._find_row(user, date, split).copy(deep=True)
+
+    def transform_behavioural(self, row: pd.Series) -> pd.Series:
+        """Recompute PCA values with the immutable train-fitted scaler and PCA."""
+        with (self.data_dir / "scaler_model.pkl").open("rb") as handle:
+            scaler = pickle.load(handle)
+        with (self.data_dir / "pca_model.pkl").open("rb") as handle:
+            pca = pickle.load(handle)
+        values = row.loc[list(BEHAVIOURAL_FEATURES)].to_numpy(float).reshape(1, -1)
+        transformed = pca.transform(scaler.transform(values))[0]
+        result = row.copy(deep=True)
+        for name, value in zip(PCA_FEATURES, transformed):
+            result[name] = float(value)
+        return result
+
+    def assess_row(self, row: pd.Series) -> dict[str, Any]:
+        """Run all frozen classifiers over the same already-transformed row."""
+        started = perf_counter(); qsvc = self._predict(row); qsvc_ms = (perf_counter() - started) * 1000
+        started = perf_counter(); vqc = self._predict_vqc(row); vqc_ms = (perf_counter() - started) * 1000
+        started = perf_counter(); classical = self._classical_evidence(row, qsvc); rbf_ms = (perf_counter() - started) * 1000
+        policy = self._assessment_policy()
+        verdict = self._apply_policy(policy["selectedPolicy"], qsvc["prediction"], vqc["prediction"])
+        qsvc["executionTimeMs"] = round(qsvc_ms, 3); vqc["executionTimeMs"] = round(vqc_ms, 3)
+        if classical["rbfSvm"] is not None: classical["rbfSvm"]["executionTimeMs"] = round(rbf_ms, 3)
+        return {"models": {"qsvc": qsvc, "vqc": vqc, "rbfSvm": classical["rbfSvm"]},
+                "rules": classical["transparentUserDayRules"],
+                "assessment": {"prediction": verdict, "verdict": "REQUIRES_REVIEW" if verdict else "NO_ADVISORY_ALERT",
+                               "policy": policy["selectedPolicy"], "quantumAgreement": qsvc["prediction"] == vqc["prediction"],
+                               "reason": self._verdict_reason(policy["selectedPolicy"], qsvc["prediction"], vqc["prediction"])}}
+
+    def population_context(self, row: pd.Series, split: str) -> list[dict[str, Any]]:
+        """Past-only personal and population comparisons; no invented peer groups."""
+        frame = self._frame(split)
+        past = frame[frame["date"].astype(str) < str(row["date"])]
+        personal = past[past["user"].astype(str) == str(row["user"])]
+        evidence = []
+        for feature in ("file_copy_count", "file_after_hours_count", "usb_connect_count", "email_external_recipients"):
+            current = float(row.get(feature, 0)); personal_mean = float(personal[feature].mean()) if len(personal) else None
+            population_mean = float(past[feature].mean()) if len(past) else None
+            evidence.append({"feature": feature, "current": current, "personalPastMean": personal_mean,
+                             "populationPastMean": population_mean, "personalHistoryRows": len(personal),
+                             "populationRows": len(past), "comparisonBoundary": "strictly earlier rows in the same chronological split"})
+        return evidence
 
     def replay(self, user: str, split: str = "test", malicious_only: bool = True, limit: int = 30) -> dict[str, Any]:
         frame = self._frame(split)

@@ -32,7 +32,7 @@ import type {
   QuantumEventAnalysis,
   QaoaOptimizationStatus,
   QaoaOptimizationResult,
-  CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks,
+  CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks, CertIncident, IncidentList,
 } from "@/domain/sentinel";
 
 export interface SentinelDataSource {
@@ -76,4 +76,8 @@ export interface SentinelDataSource {
   getCertInvestigation(user: string, date: string, split?: string): Promise<CertInvestigation | null>;
   getCertReplay(user: string, split?: string): Promise<CertReplay | null>;
   getCertBenchmarks(): Promise<CertBenchmarks>;
+  listIncidents(detected?: boolean): Promise<IncidentList>;
+  getIncident(incidentId: string): Promise<CertIncident | null>;
+  createIncident(input: { user: string; date: string; split: string; scenario: string }): Promise<CertIncident>;
+  planIncidentResponse(incidentId: string): Promise<CertIncident>;
 }

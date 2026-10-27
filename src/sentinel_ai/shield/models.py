@@ -56,7 +56,7 @@ class Scenario:
     scenario_id: str
     name: str
     summary: str
-    risk_score: float
+    risk_score: float | None
     threat_classification: str
     entry_points: tuple[str, ...]
     nodes: tuple[ShieldNode, ...]
