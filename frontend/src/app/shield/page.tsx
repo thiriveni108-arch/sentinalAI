@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, Atom, CheckCircle2, Route, ShieldCheck } from "lucide-react";
 import { getSentinelDataSource } from "@/data/data-source";
 import { executeAdaptiveShield, planAdaptiveShield, rollbackAdaptiveShield } from "@/app/attack-lab/actions";
+import { UnifiedShieldCommand } from "@/components/shield/unified-shield-command";
 
 export const metadata: Metadata = { title: "SHIELD Decision Lab" };
 type Params = Promise<Record<string, string | string[] | undefined>>;
@@ -47,6 +48,7 @@ export default async function ShieldPage({ searchParams }: { searchParams: Param
   if (!data) return <section className="p-8 panel"><h1 className="font-bold text-2xl">SHIELD Decision Lab</h1><p className="mt-3 text-[var(--text-muted)] text-sm">Connect the SentinelAI API to compute the advisory containment plan. No fixture results are fabricated.</p></section>;
   const rec = data.recommendation;
   return <div className="space-y-5 mx-auto max-w-[1700px]">
+    <UnifiedShieldCommand />
     <section className="relative bg-white shadow-[0_18px_48px_rgb(30_110_90/0.10)] p-7 border border-[var(--accent)]/30 rounded-[22px] overflow-hidden">
       <div className="flex flex-wrap justify-between items-start gap-5"><div><div className="text-[var(--accent)] tech-label">SentinelAI-Q / advisory simulation</div><h1 className="mt-3 font-bold text-3xl tracking-tight">SHIELD Decision Lab</h1><p className="mt-2 max-w-3xl text-[var(--text-secondary)] text-xs leading-6">Minimum-disruption containment across every enumerated critical attack path, with classical validation and counterfactual verification.</p></div><div className="bg-[#fffaf0] px-4 py-3 border border-[var(--medium)]/30 rounded-xl text-[#8b6210] text-xs">Human approval required · no production actions</div></div>
       <nav className="flex flex-wrap gap-2 mt-6">{scenarioLinks.map(([key, label]) => <Link key={key} href={`/shield?scenario=${key}`} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${key === id ? "border-[var(--accent)] bg-[var(--surface-selected)]" : "border-border"}`}>{label}</Link>)}</nav>

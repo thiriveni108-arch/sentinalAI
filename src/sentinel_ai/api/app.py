@@ -152,9 +152,11 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     from sentinel_ai.shield.autonomous_defense import (Actor, DefenseCoordinator, DefenseStore,
         MultiStepConsequenceEnvironment, Proposal)
     from sentinel_ai.shield.continuous_learning import ExperienceStore, LearningCoordinator
+    from sentinel_ai.shield.unified_session import UnifiedSessionService
     shield = ShieldService()
     autonomous_defense = DefenseCoordinator(DefenseStore(resolved_database_path.with_name("shield_phase8.db")))
     learning = LearningCoordinator(ExperienceStore(resolved_database_path.with_name("shield_phase10_learning.db")))
+    unified_shield = UnifiedSessionService(autonomous_defense, learning.store)
     cert = CertResearchService()
     incidents = IncidentService(resolved_database_path, cert, shield)
 
@@ -312,6 +314,38 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         except KeyError as error: raise HTTPException(404,{"code":"phase8_proposal_not_found","message":proposal_id}) from error
         except PermissionError as error: raise HTTPException(403,{"code":"phase8_execution_denied","message":str(error)}) from error
         except ValueError as error: raise HTTPException(409,{"code":"phase8_execution_invalid","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions", response_model=dict[str, object], status_code=201)
+    def create_shield_session(payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
+        try:return unified_shield.create(str(payload.get("scenario","credential-compromise")),str(payload.get("topology","small-office")),int(payload.get("seed",96001)))
+        except ValueError as error: raise HTTPException(422,{"code":"invalid_simulator_session","message":str(error)}) from error
+
+    @app.get("/api/shield/sessions/{incident_id}", response_model=dict[str, object])
+    def shield_session(incident_id:str) -> dict[str, object]:
+        try:return unified_shield.snapshot(incident_id)
+        except KeyError as error: raise HTTPException(409,{"code":"session_unavailable","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/plan", response_model=dict[str, object])
+    def plan_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.plan(incident_id,int(payload["version"]))
+        except KeyError as error: raise HTTPException(409,{"code":"session_unavailable","message":str(error)}) from error
+        except RuntimeError as error: raise HTTPException(409,{"code":"shield_plan_conflict","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/submit", response_model=dict[str, object])
+    def submit_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.submit(incident_id,int(payload["version"]))
+        except (KeyError,RuntimeError) as error: raise HTTPException(409,{"code":"shield_submit_conflict","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/approval", response_model=dict[str, object])
+    def approve_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.approve(incident_id,str(payload["identity"]),str(payload["decision"]),int(payload["version"]))
+        except PermissionError as error: raise HTTPException(403,{"code":"simulated_identity_denied","message":str(error)}) from error
+        except (KeyError,RuntimeError,ValueError) as error: raise HTTPException(409,{"code":"shield_approval_conflict","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/execute", response_model=dict[str, object])
+    def execute_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.execute(incident_id,int(payload["version"]))
+        except (KeyError,RuntimeError,ValueError,PermissionError) as error: raise HTTPException(409,{"code":"shield_execution_conflict","message":str(error)}) from error
 
     def require_model_governance(token: Annotated[str | None, Header(alias="X-Model-Governance-Token")] = None) -> str:
         expected=os.environ.get("SENTINEL_MODEL_GOVERNANCE_TOKEN")
