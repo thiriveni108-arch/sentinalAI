@@ -149,7 +149,10 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     app = FastAPI(title="SentinelAI API", version="0.1.0", lifespan=lifespan)
 
     from sentinel_ai.shield import ShieldService
+    from sentinel_ai.shield.autonomous_defense import (Actor, DefenseCoordinator, DefenseStore,
+        MultiStepConsequenceEnvironment, Proposal)
     shield = ShieldService()
+    autonomous_defense = DefenseCoordinator(DefenseStore(resolved_database_path.with_name("shield_phase8.db")))
     cert = CertResearchService()
     incidents = IncidentService(resolved_database_path, cert, shield)
 
@@ -272,6 +275,41 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
             return shield.quantum_experiment(scenario_id)
         except KeyError:
             raise HTTPException(404, {"code": "shield_scenario_not_found", "message": f"Unknown SHIELD scenario: {scenario_id}"})
+
+    @app.post("/api/shield/autonomous/proposals", response_model=dict[str, object], status_code=201)
+    def create_autonomous_proposal(payload: Annotated[dict[str, object], Body()]) -> dict[str, object]:
+        """Create a simulated-only Phase 8 proposal; no production action is possible."""
+        try:
+            proposal = Proposal(incident_id=str(payload["incidentId"]), action=str(payload["action"]),
+                targets=tuple(str(x) for x in payload.get("targets", ())), state_version=int(payload.get("stateVersion", 0)),
+                planner_source=str(payload.get("plannerSource", "classical")), prediction=dict(payload.get("prediction", {})),
+                uncertainty=float(payload.get("uncertainty", 1.0)), target_criticality=int(payload.get("targetCriticality", 1)),
+                blast_radius=int(payload.get("blastRadius", 1)), reversible=bool(payload.get("reversible", True)),
+                recovery_plan=bool(payload.get("recoveryPlan", True)), incident_severity=int(payload.get("incidentSeverity", 1)))
+            env = MultiStepConsequenceEnvironment(str(payload.get("family", "credential-compromise")), int(payload.get("seed", 7301)))
+            return autonomous_defense.propose(proposal, str(payload["idempotencyKey"]), env)
+        except (KeyError, TypeError, ValueError) as error:
+            raise HTTPException(422, {"code":"invalid_phase8_proposal","message":str(error)}) from error
+
+    @app.get("/api/shield/autonomous/proposals/{proposal_id}", response_model=dict[str, object])
+    def get_autonomous_proposal(proposal_id: str) -> dict[str, object]:
+        try:
+            result=autonomous_defense.store.get(proposal_id); result["history"]=autonomous_defense.store.events(proposal_id); return result
+        except KeyError as error: raise HTTPException(404,{"code":"phase8_proposal_not_found","message":proposal_id}) from error
+
+    @app.post("/api/shield/autonomous/proposals/{proposal_id}/approval", response_model=dict[str, object])
+    def approve_autonomous_proposal(proposal_id: str, payload: Annotated[dict[str, object], Body()]) -> dict[str, object]:
+        try:return autonomous_defense.approve(proposal_id,Actor(str(payload["actorId"]),str(payload["role"])),str(payload["decision"]))
+        except KeyError as error: raise HTTPException(404,{"code":"phase8_proposal_not_found","message":proposal_id}) from error
+        except PermissionError as error: raise HTTPException(403,{"code":"phase8_approval_denied","message":str(error)}) from error
+        except ValueError as error: raise HTTPException(409,{"code":"phase8_approval_invalid","message":str(error)}) from error
+
+    @app.post("/api/shield/autonomous/proposals/{proposal_id}/execute", response_model=dict[str, object])
+    def execute_autonomous_proposal(proposal_id: str, payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
+        try:return autonomous_defense.execute(proposal_id,Actor(str(payload.get("actorId","system")),str(payload.get("role","system"))))
+        except KeyError as error: raise HTTPException(404,{"code":"phase8_proposal_not_found","message":proposal_id}) from error
+        except PermissionError as error: raise HTTPException(403,{"code":"phase8_execution_denied","message":str(error)}) from error
+        except ValueError as error: raise HTTPException(409,{"code":"phase8_execution_invalid","message":str(error)}) from error
 
     @app.exception_handler(HTTPException)
     async def http_error(_request: Request, error: HTTPException) -> JSONResponse:
