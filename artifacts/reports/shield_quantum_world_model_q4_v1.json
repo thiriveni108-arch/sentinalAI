@@ -1,0 +1,1277 @@
+{
+  "model_version": "shield-world-hybrid-q4-v1.0.0",
+  "architecture": "StandardScaler -> train-fitted PCA(4) -> 4-qubit, 2-layer variational circuit -> classical heads",
+  "foundation_audit": {
+    "dataset_present": true,
+    "dataset_sha256": "b57763d0312a22d8aa4209f90823653c5f42f106d9701580220980945257bac5",
+    "manifest_hash_matches": true,
+    "phase4_artifact_present": true,
+    "phase4_report_present": true,
+    "episode_overlap_count": 0,
+    "topology_overlap_count": 0,
+    "forbidden_features": [],
+    "features_exactly_match_manifest": true,
+    "targets_exactly_match_manifest": true,
+    "action_counts": {
+      "NO_OP": 3751,
+      "REVOKE_SESSION": 139,
+      "DISABLE_ACCOUNT": 231,
+      "REQUIRE_FRESH_MFA": 43,
+      "REMOVE_PRIVILEGE": 98,
+      "RESTRICT_RESOURCE": 123,
+      "DISABLE_BULK_EXPORT": 219,
+      "ISOLATE_DEVICE": 308,
+      "SEGMENT_SERVICE": 240,
+      "ROLLBACK": 67
+    },
+    "no_op_fraction": 0.718720061314428,
+    "hidden_action_effectiveness": "forced_effectiveness is sampled by the simulator but excluded from features",
+    "status": "pass"
+  },
+  "dataset_sha256": "b57763d0312a22d8aa4209f90823653c5f42f106d9701580220980945257bac5",
+  "feature_columns": [
+    "state_tick",
+    "active_node_count",
+    "service_health_min",
+    "service_health_mean",
+    "identity_active_fraction",
+    "identity_restricted_fraction",
+    "control_on_fraction",
+    "observed_compromise_max",
+    "observed_compromise_mean",
+    "observed_path_count",
+    "workflow_count",
+    "workflow_slo_fraction",
+    "workflow_total_demand",
+    "action_target_count",
+    "action_reversible",
+    "action_approved",
+    "approval_tier_code",
+    "action__NO_OP",
+    "action__REVOKE_SESSION",
+    "action__DISABLE_ACCOUNT",
+    "action__REQUIRE_FRESH_MFA",
+    "action__REMOVE_PRIVILEGE",
+    "action__RESTRICT_RESOURCE",
+    "action__DISABLE_BULK_EXPORT",
+    "action__ISOLATE_DEVICE",
+    "action__SEGMENT_SERVICE",
+    "action__ROLLBACK",
+    "evidence__ANOMALOUS_SESSION",
+    "evidence__POST_ACTION_MALICIOUS_ACTIVITY",
+    "evidence__POST_ACTION_NO_CONFIRMED_ACTIVITY",
+    "evidence__SENSITIVE_ACCESS_SPIKE",
+    "evidence__LATERAL_CONNECTION",
+    "evidence__BULK_EXPORT",
+    "evidence__PRIVILEGE_CHANGE",
+    "evidence__CONTAINMENT_ROUTE_SWITCH",
+    "evidence__UNSUPPORTED",
+    "belief__BENIGN",
+    "belief__CREDENTIAL_COMPROMISE",
+    "belief__MALICIOUS_INSIDER",
+    "belief__LATERAL_MOVEMENT",
+    "belief__SENSITIVE_DATA_EXFILTRATION",
+    "belief__PRIVILEGE_ESCALATION",
+    "belief__UNKNOWN",
+    "belief_entropy"
+  ],
+  "feature_min": [
+    0.0,
+    4.0,
+    0.325,
+    0.325,
+    0.0,
+    0.0,
+    0.3333333333333333,
+    0.18,
+    0.18,
+    0.0,
+    2.0,
+    0.0,
+    1.0,
+    0.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.008543472026641519,
+    0.0709984970820686,
+    0.07569678944715623,
+    0.06320385366104357,
+    0.056214461510731284,
+    0.07362645013967604,
+    0.11964124814730269,
+    0.8087396207755336
+  ],
+  "feature_max": [
+    11.0,
+    6.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    2.0,
+    1.0,
+    1.0,
+    3.0,
+    1.0,
+    1.0,
+    2.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    1.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.4907209874574753,
+    0.21830841011429997,
+    0.14901908819020146,
+    0.19589925542685122,
+    0.2179409125617751,
+    0.16299990322118546,
+    0.23783874372932845,
+    0.9956836756708856
+  ],
+  "targets": [
+    "target_contained",
+    "target_residual_exposure",
+    "target_route_switched",
+    "target_workflow_disruption",
+    "target_next_malicious_observation"
+  ],
+  "split_rows": {
+    "train": 3709,
+    "validation": 697,
+    "test": 813
+  },
+  "pca_explained_variance_ratio": [
+    0.2576187760774237,
+    0.09366049886711332,
+    0.0915802478282557,
+    0.06717517244441114
+  ],
+  "seeds": [
+    42073,
+    42089,
+    42101
+  ],
+  "variational_training_objective": "mean of 3 Brier and 2 MSE losses on an inner training-only holdout",
+  "variational_inner_losses": [
+    0.10154169227782446,
+    0.10972626564194139,
+    0.1320048358581033
+  ],
+  "hybrid": {
+    "validation": {
+      "rows": 697,
+      "classification": {
+        "target_contained": {
+          "precision": 0.3090909090909091,
+          "recall": 0.8947368421052632,
+          "f1": 0.4594594594594595,
+          "brier": 0.13079691587031644,
+          "ece_10_bin": 0.21606913672965056
+        },
+        "target_route_switched": {
+          "precision": 0.2781065088757396,
+          "recall": 0.9215686274509803,
+          "f1": 0.42727272727272725,
+          "brier": 0.13598220187096718,
+          "ece_10_bin": 0.229752315408287
+        },
+        "target_next_malicious_observation": {
+          "precision": 0.8375,
+          "recall": 0.6308851224105462,
+          "f1": 0.719656283566058,
+          "brier": 0.23244937426279588,
+          "ece_10_bin": 0.24817298152351264
+        }
+      },
+      "regression": {
+        "target_residual_exposure": {
+          "mae": 0.20512050734125883,
+          "rmse": 0.28419829904716293
+        },
+        "target_workflow_disruption": {
+          "mae": 0.05823973466765761,
+          "rmse": 0.09494960498668832
+        }
+      },
+      "uncertainty": {
+        "target_contained": {
+          "mean_ensemble_std": 0.018801892508814793
+        },
+        "target_route_switched": {
+          "mean_ensemble_std": 0.016334021461203142
+        },
+        "target_next_malicious_observation": {
+          "mean_ensemble_std": 0.007696766391108986
+        },
+        "target_residual_exposure": {
+          "mean_ensemble_std": 0.009132923418345797
+        },
+        "target_workflow_disruption": {
+          "mean_ensemble_std": 0.005644498228073939
+        }
+      }
+    },
+    "test": {
+      "rows": 813,
+      "classification": {
+        "target_contained": {
+          "precision": 0.20725388601036268,
+          "recall": 0.7142857142857143,
+          "f1": 0.321285140562249,
+          "brier": 0.1582910820892119,
+          "ece_10_bin": 0.24660225507416608
+        },
+        "target_route_switched": {
+          "precision": 0.3142857142857143,
+          "recall": 0.9295774647887324,
+          "f1": 0.4697508896797153,
+          "brier": 0.1470054944180773,
+          "ece_10_bin": 0.23713142976214263
+        },
+        "target_next_malicious_observation": {
+          "precision": 0.835030549898167,
+          "recall": 0.6497622820919176,
+          "f1": 0.7308377896613191,
+          "brier": 0.23509171547679025,
+          "ece_10_bin": 0.2575308536909288
+        }
+      },
+      "regression": {
+        "target_residual_exposure": {
+          "mae": 0.21851056120581533,
+          "rmse": 0.292300643127416
+        },
+        "target_workflow_disruption": {
+          "mae": 0.06715340251843745,
+          "rmse": 0.10419089524234881
+        }
+      },
+      "uncertainty": {
+        "target_contained": {
+          "mean_ensemble_std": 0.0193079190623626
+        },
+        "target_route_switched": {
+          "mean_ensemble_std": 0.016728290411039324
+        },
+        "target_next_malicious_observation": {
+          "mean_ensemble_std": 0.0077793246553143364
+        },
+        "target_residual_exposure": {
+          "mean_ensemble_std": 0.008725331460476484
+        },
+        "target_workflow_disruption": {
+          "mean_ensemble_std": 0.00571747534719218
+        }
+      }
+    },
+    "test_by_action": {
+      "NO_OP": {
+        "rows": 593,
+        "classification": {
+          "target_contained": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.04107740816473198,
+            "ece_10_bin": 0.16698816541642839
+          },
+          "target_route_switched": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.044460992707977584,
+            "ece_10_bin": 0.1766238717204525
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.855457227138643,
+            "recall": 0.6263498920086393,
+            "f1": 0.7231920199501247,
+            "brier": 0.23749366650004747,
+            "ece_10_bin": 0.2715992851688915
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.16938397170274314,
+            "rmse": 0.21764239000786437
+          },
+          "target_workflow_disruption": {
+            "mae": 0.04519172405025724,
+            "rmse": 0.07052768061429662
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.019186247559207826
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01732800659847172
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.007465910730374219
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.0077431000327167635
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.0057791039609283576
+          }
+        }
+      },
+      "REVOKE_SESSION": {
+        "rows": 18,
+        "classification": {
+          "target_contained": {
+            "precision": 0.4444444444444444,
+            "recall": 1.0,
+            "f1": 0.6153846153846154,
+            "brier": 0.30730736009532533,
+            "ece_10_bin": 0.2989507267334802
+          },
+          "target_route_switched": {
+            "precision": 0.23529411764705882,
+            "recall": 1.0,
+            "f1": 0.38095238095238093,
+            "brier": 0.4543684474239745,
+            "ece_10_bin": 0.5381366634198275
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.75,
+            "recall": 0.6428571428571429,
+            "f1": 0.6923076923076923,
+            "brier": 0.23705422084968486,
+            "ece_10_bin": 0.3037803607943655
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.40904276863582756,
+            "rmse": 0.4773995480990428
+          },
+          "target_workflow_disruption": {
+            "mae": 0.03980058303264884,
+            "rmse": 0.04915892159292931
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.01607523978234538
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01254305203089186
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.0056529278609459225
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.010908267285279886
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005093387731201633
+          }
+        }
+      },
+      "DISABLE_ACCOUNT": {
+        "rows": 30,
+        "classification": {
+          "target_contained": {
+            "precision": 0.06666666666666667,
+            "recall": 1.0,
+            "f1": 0.125,
+            "brier": 0.8992605257767419,
+            "ece_10_bin": 0.9253433712683782
+          },
+          "target_route_switched": {
+            "precision": 0.06666666666666667,
+            "recall": 1.0,
+            "f1": 0.125,
+            "brier": 0.8755092897086932,
+            "ece_10_bin": 0.8997773609553626
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.6,
+            "recall": 0.5714285714285714,
+            "f1": 0.5853658536585366,
+            "brier": 0.27454641950857994,
+            "ece_10_bin": 0.33188051106358407
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.3356406437281783,
+            "rmse": 0.38439540035273967
+          },
+          "target_workflow_disruption": {
+            "mae": 0.2144763691298106,
+            "rmse": 0.23568903494805296
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.008087914061850105
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.008188106042361165
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.012750802231520718
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.0111969047328202
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.007888947096503627
+          }
+        }
+      },
+      "REQUIRE_FRESH_MFA": {
+        "rows": 6,
+        "classification": {
+          "target_contained": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.4080248320912645,
+            "ece_10_bin": 0.5980066168828124
+          },
+          "target_route_switched": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.4641789126839362,
+            "ece_10_bin": 0.6729342951395937
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.6666666666666666,
+            "recall": 0.6666666666666666,
+            "f1": 0.6666666666666666,
+            "brier": 0.1865330208480729,
+            "ece_10_bin": 0.41799800119538455
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.2625829439473,
+            "rmse": 0.32788352734159415
+          },
+          "target_workflow_disruption": {
+            "mae": 0.029841949591864023,
+            "rmse": 0.03617230840182241
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.011103382036525958
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01161894478560198
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.01010235191759349
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.009450697369755961
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.003867873176777042
+          }
+        }
+      },
+      "REMOVE_PRIVILEGE": {
+        "rows": 14,
+        "classification": {
+          "target_contained": {
+            "precision": 0.18181818181818182,
+            "recall": 0.6666666666666666,
+            "f1": 0.2857142857142857,
+            "brier": 0.4564223378489987,
+            "ece_10_bin": 0.6045534922454965
+          },
+          "target_route_switched": {
+            "precision": 0.5833333333333334,
+            "recall": 1.0,
+            "f1": 0.7368421052631579,
+            "brier": 0.2515929138341855,
+            "ece_10_bin": 0.2065868575428986
+          },
+          "target_next_malicious_observation": {
+            "precision": 1.0,
+            "recall": 0.8,
+            "f1": 0.8888888888888888,
+            "brier": 0.18156436390535102,
+            "ece_10_bin": 0.24004642674257193
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.3056001062425763,
+            "rmse": 0.3884615831272013
+          },
+          "target_workflow_disruption": {
+            "mae": 0.04919834664821635,
+            "rmse": 0.061405580137520024
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.026068035456543338
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01993133347732064
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.008501405115351742
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.012187962953739074
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005289200997930911
+          }
+        }
+      },
+      "RESTRICT_RESOURCE": {
+        "rows": 20,
+        "classification": {
+          "target_contained": {
+            "precision": 0.07142857142857142,
+            "recall": 0.25,
+            "f1": 0.1111111111111111,
+            "brier": 0.4075312588545209,
+            "ece_10_bin": 0.5206709169300241
+          },
+          "target_route_switched": {
+            "precision": 0.3125,
+            "recall": 1.0,
+            "f1": 0.47619047619047616,
+            "brier": 0.3010693124367872,
+            "ece_10_bin": 0.33725278662990843
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.8,
+            "recall": 0.8571428571428571,
+            "f1": 0.8275862068965517,
+            "brier": 0.19816075931576582,
+            "ece_10_bin": 0.17654955933958602
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.3392130340744205,
+            "rmse": 0.45427001370027636
+          },
+          "target_workflow_disruption": {
+            "mae": 0.13984200642517655,
+            "rmse": 0.1713503465390428
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.02213250357656138
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.016820443353400834
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.008072752613328526
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.010754242276378074
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.004135076909453017
+          }
+        }
+      },
+      "DISABLE_BULK_EXPORT": {
+        "rows": 37,
+        "classification": {
+          "target_contained": {
+            "precision": 0.2413793103448276,
+            "recall": 0.6363636363636364,
+            "f1": 0.35,
+            "brier": 0.42097486719132504,
+            "ece_10_bin": 0.4512379340979508
+          },
+          "target_route_switched": {
+            "precision": 0.4411764705882353,
+            "recall": 1.0,
+            "f1": 0.6122448979591837,
+            "brier": 0.3284991962566723,
+            "ece_10_bin": 0.2917141496308208
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.8333333333333334,
+            "recall": 0.7142857142857143,
+            "f1": 0.7692307692307693,
+            "brier": 0.22732545782922328,
+            "ece_10_bin": 0.2366578604125492
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.3855843818192141,
+            "rmse": 0.4658325570139471
+          },
+          "target_workflow_disruption": {
+            "mae": 0.05210524021872987,
+            "rmse": 0.06218377605015037
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.022374693414570025
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.016189283276266214
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.008131401952525921
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.011570712074771044
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.0049271581651386814
+          }
+        }
+      },
+      "ISOLATE_DEVICE": {
+        "rows": 47,
+        "classification": {
+          "target_contained": {
+            "precision": 0.25,
+            "recall": 0.6428571428571429,
+            "f1": 0.36,
+            "brier": 0.3648866736310989,
+            "ece_10_bin": 0.39559808679681674
+          },
+          "target_route_switched": {
+            "precision": 0.3488372093023256,
+            "recall": 0.9375,
+            "f1": 0.5084745762711864,
+            "brier": 0.3401986199317702,
+            "ece_10_bin": 0.330899035087186
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.71875,
+            "recall": 0.6764705882352942,
+            "f1": 0.696969696969697,
+            "brier": 0.25813005501080993,
+            "ece_10_bin": 0.229099889110292
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.3489759157457009,
+            "rmse": 0.4348092887617805
+          },
+          "target_workflow_disruption": {
+            "mae": 0.13301114812511391,
+            "rmse": 0.16359157912517266
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.02294912296713435
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.014841086681856557
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.007983965562861493
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.010162926851904062
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.004476112791708093
+          }
+        }
+      },
+      "SEGMENT_SERVICE": {
+        "rows": 38,
+        "classification": {
+          "target_contained": {
+            "precision": 0.3142857142857143,
+            "recall": 0.7857142857142857,
+            "f1": 0.4489795918367347,
+            "brier": 0.46815764554828804,
+            "ece_10_bin": 0.5314178183328236
+          },
+          "target_route_switched": {
+            "precision": 0.3611111111111111,
+            "recall": 1.0,
+            "f1": 0.5306122448979592,
+            "brier": 0.4137402448897308,
+            "ece_10_bin": 0.4498276541363724
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.8571428571428571,
+            "recall": 0.7058823529411765,
+            "f1": 0.7741935483870968,
+            "brier": 0.22233821124635816,
+            "ece_10_bin": 0.3208310513883111
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.35081117724735994,
+            "rmse": 0.4480269770350387
+          },
+          "target_workflow_disruption": {
+            "mae": 0.182605794593277,
+            "rmse": 0.21416321300391242
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.013825332829753775
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.013011658474341638
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.008116531141652731
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.01117014794281234
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.006456005342794177
+          }
+        }
+      },
+      "ROLLBACK": {
+        "rows": 10,
+        "classification": {
+          "target_contained": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.43179772647254905,
+            "ece_10_bin": 0.629351695377928
+          },
+          "target_route_switched": {
+            "precision": 1.0,
+            "recall": 0.5555555555555556,
+            "f1": 0.7142857142857143,
+            "brier": 0.2511492318556019,
+            "ece_10_bin": 0.449228788087586
+          },
+          "target_next_malicious_observation": {
+            "precision": 1.0,
+            "recall": 1.0,
+            "f1": 1.0,
+            "brier": 0.11761309289210024,
+            "ece_10_bin": 0.336641256265926
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.31349271579841154,
+            "rmse": 0.37557517816277736
+          },
+          "target_workflow_disruption": {
+            "mae": 0.18632155935574804,
+            "rmse": 0.1934965537333157
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.04818437136857935
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.03770352916961444
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.00874038407481875
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.01971201631153649
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.007498146881264378
+          }
+        }
+      }
+    },
+    "test_by_attacker_scenario": {
+      "benign-alert": {
+        "rows": 4,
+        "classification": {
+          "target_contained": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.00135403796952016,
+            "ece_10_bin": 0.03624136860688023
+          },
+          "target_route_switched": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.010644913997313819,
+            "ece_10_bin": 0.10036205798800704
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1": 0.0,
+            "brier": 0.19370182998874386,
+            "ece_10_bin": 0.03627944393515023
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.9780940564700786,
+            "rmse": 0.9783078322071896
+          },
+          "target_workflow_disruption": {
+            "mae": 0.02040867847161383,
+            "rmse": 0.023502493542462272
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.009341938349208368
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.022019731260055492
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.01256001539410749
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.017196206387108132
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005799268782199063
+          }
+        }
+      },
+      "credential-compromise": {
+        "rows": 96,
+        "classification": {
+          "target_contained": {
+            "precision": 0.4482758620689655,
+            "recall": 0.8666666666666667,
+            "f1": 0.5909090909090909,
+            "brier": 0.14417934403035185,
+            "ece_10_bin": 0.22159670756494182
+          },
+          "target_route_switched": {
+            "precision": 0.11428571428571428,
+            "recall": 1.0,
+            "f1": 0.20512820512820512,
+            "brier": 0.21200699535908263,
+            "ece_10_bin": 0.36236770598429074
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.7045454545454546,
+            "recall": 0.4696969696969697,
+            "f1": 0.5636363636363636,
+            "brier": 0.26115068824214716,
+            "ece_10_bin": 0.2263811443994513
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.2709319405213738,
+            "rmse": 0.36188185939259104
+          },
+          "target_workflow_disruption": {
+            "mae": 0.06703413267012888,
+            "rmse": 0.11142554130533137
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.01963962276897187
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01835206406054259
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.007570152533301081
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.00849483357415573
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005316364433626097
+          }
+        }
+      },
+      "lateral-movement": {
+        "rows": 180,
+        "classification": {
+          "target_contained": {
+            "precision": 0.2619047619047619,
+            "recall": 0.7857142857142857,
+            "f1": 0.39285714285714285,
+            "brier": 0.15502311900814816,
+            "ece_10_bin": 0.23782156493250323
+          },
+          "target_route_switched": {
+            "precision": 0.2608695652173913,
+            "recall": 1.0,
+            "f1": 0.41379310344827586,
+            "brier": 0.15022183285272817,
+            "ece_10_bin": 0.2590315065040124
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.8454545454545455,
+            "recall": 0.6549295774647887,
+            "f1": 0.7380952380952381,
+            "brier": 0.23282761582289027,
+            "ece_10_bin": 0.2778929377788766
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.19874378609040574,
+            "rmse": 0.26329911285903373
+          },
+          "target_workflow_disruption": {
+            "mae": 0.05136868990129986,
+            "rmse": 0.07530234042544344
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.016505254049353362
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01580615527929299
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.0072798049305509245
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.008011378915992375
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.0056335711520052335
+          }
+        }
+      },
+      "malicious-insider": {
+        "rows": 171,
+        "classification": {
+          "target_contained": {
+            "precision": 0.11428571428571428,
+            "recall": 0.4,
+            "f1": 0.17777777777777778,
+            "brier": 0.15541678598704894,
+            "ece_10_bin": 0.23049902789450952
+          },
+          "target_route_switched": {
+            "precision": 0.3055555555555556,
+            "recall": 0.7333333333333333,
+            "f1": 0.43137254901960786,
+            "brier": 0.14265865909757822,
+            "ece_10_bin": 0.21197741284876884
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.82,
+            "recall": 0.6307692307692307,
+            "f1": 0.7130434782608696,
+            "brier": 0.2375276260000745,
+            "ece_10_bin": 0.24808352382890925
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.20370733072877448,
+            "rmse": 0.27844897092877485
+          },
+          "target_workflow_disruption": {
+            "mae": 0.07653233948256032,
+            "rmse": 0.10591665284113343
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.020566549858673712
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01677047160670948
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.007746678453115337
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.0076047726262892254
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005708449136239218
+          }
+        }
+      },
+      "privilege-escalation": {
+        "rows": 147,
+        "classification": {
+          "target_contained": {
+            "precision": 0.17073170731707318,
+            "recall": 0.7777777777777778,
+            "f1": 0.28,
+            "brier": 0.18168295103422588,
+            "ece_10_bin": 0.28266315605265463
+          },
+          "target_route_switched": {
+            "precision": 0.4358974358974359,
+            "recall": 0.9444444444444444,
+            "f1": 0.5964912280701754,
+            "brier": 0.14199476177776635,
+            "ece_10_bin": 0.21878614762566412
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.84,
+            "recall": 0.6942148760330579,
+            "f1": 0.7601809954751131,
+            "brier": 0.23908738597522297,
+            "ece_10_bin": 0.29820444995457396
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.19210310858266505,
+            "rmse": 0.24316044949178697
+          },
+          "target_workflow_disruption": {
+            "mae": 0.07373737315558396,
+            "rmse": 0.12085381488595257
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.021326721823363336
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.01837235555798115
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.008258476518297041
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.010109606412854149
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.006170680155521992
+          }
+        }
+      },
+      "sensitive-data-exfiltration": {
+        "rows": 215,
+        "classification": {
+          "target_contained": {
+            "precision": 0.10869565217391304,
+            "recall": 0.625,
+            "f1": 0.18518518518518517,
+            "brier": 0.15654042294164736,
+            "ece_10_bin": 0.26399703597204954
+          },
+          "target_route_switched": {
+            "precision": 0.4074074074074074,
+            "recall": 1.0,
+            "f1": 0.5789473684210527,
+            "brier": 0.12470895419035845,
+            "ece_10_bin": 0.20378551604609893
+          },
+          "target_next_malicious_observation": {
+            "precision": 0.8759124087591241,
+            "recall": 0.7017543859649122,
+            "f1": 0.7792207792207793,
+            "brier": 0.2214523286462262,
+            "ece_10_bin": 0.2616282208318225
+          }
+        },
+        "regression": {
+          "target_residual_exposure": {
+            "mae": 0.22735000805511826,
+            "rmse": 0.2943923890442113
+          },
+          "target_workflow_disruption": {
+            "mae": 0.06933031027743344,
+            "rmse": 0.10881094554629048
+          }
+        },
+        "uncertainty": {
+          "target_contained": {
+            "mean_ensemble_std": 0.019310292073169488
+          },
+          "target_route_switched": {
+            "mean_ensemble_std": 0.015519200778043587
+          },
+          "target_next_malicious_observation": {
+            "mean_ensemble_std": 0.007900340878258924
+          },
+          "target_residual_exposure": {
+            "mean_ensemble_std": 0.009213158893192347
+          },
+          "target_workflow_disruption": {
+            "mean_ensemble_std": 0.005662613041817491
+          }
+        }
+      }
+    }
+  },
+  "random_forest_test": {
+    "rows": 813,
+    "classification": {
+      "target_contained": {
+        "precision": 0.3161290322580645,
+        "recall": 0.875,
+        "f1": 0.46445497630331756,
+        "brier": 0.08264798145627886,
+        "ece_10_bin": 0.09472037114650884
+      },
+      "target_route_switched": {
+        "precision": 0.42038216560509556,
+        "recall": 0.9295774647887324,
+        "f1": 0.5789473684210527,
+        "brier": 0.08083209533011665,
+        "ece_10_bin": 0.08306245989939931
+      },
+      "target_next_malicious_observation": {
+        "precision": 0.8265765765765766,
+        "recall": 0.5816164817749604,
+        "f1": 0.6827906976744186,
+        "brier": 0.2375223330930388,
+        "ece_10_bin": 0.2215012968338762
+      }
+    },
+    "regression": {
+      "target_residual_exposure": {
+        "mae": 0.11292482969707586,
+        "rmse": 0.19638514981542296
+      },
+      "target_workflow_disruption": {
+        "mae": 0.0199837792180626,
+        "rmse": 0.05769006042669303
+      }
+    }
+  },
+  "classical_neural_network_test": {
+    "rows": 813,
+    "classification": {
+      "target_contained": {
+        "precision": 0.5,
+        "recall": 0.05357142857142857,
+        "f1": 0.0967741935483871,
+        "brier": 0.04751293208700423,
+        "ece_10_bin": 0.009464980147769754
+      },
+      "target_route_switched": {
+        "precision": 0.45454545454545453,
+        "recall": 0.07042253521126761,
+        "f1": 0.12195121951219512,
+        "brier": 0.06673987167831726,
+        "ece_10_bin": 0.04301145179532291
+      },
+      "target_next_malicious_observation": {
+        "precision": 0.7761377613776138,
+        "recall": 1.0,
+        "f1": 0.8739612188365651,
+        "brier": 0.18953139786469142,
+        "ece_10_bin": 0.12035527250199354
+      }
+    },
+    "regression": {
+      "target_residual_exposure": {
+        "mae": 0.12423826571561751,
+        "rmse": 0.20261617897177278
+      },
+      "target_workflow_disruption": {
+        "mae": 0.023414293864428334,
+        "rmse": 0.05460854951152197
+      }
+    }
+  },
+  "held_out_topologies": [
+    "topology-credential-compromise-15",
+    "topology-credential-compromise-17",
+    "topology-credential-compromise-18",
+    "topology-credential-compromise-30",
+    "topology-malicious-insider-1",
+    "topology-malicious-insider-11",
+    "topology-malicious-insider-13",
+    "topology-malicious-insider-19",
+    "topology-malicious-insider-9",
+    "topology-multiple-routes-11",
+    "topology-multiple-routes-12",
+    "topology-multiple-routes-21",
+    "topology-multiple-routes-27",
+    "topology-multiple-routes-28"
+  ],
+  "timing_seconds": {
+    "hybrid_training": 96.59700690000318,
+    "hybrid_validation_and_test_inference": 20.694750999915414,
+    "hybrid_single_row_service_inference": 0.08156050008255988,
+    "nn_training": 4.011326299980283,
+    "nn_test_inference": 0.05153619998600334,
+    "rf_training_phase4": 2.3858823000919074,
+    "rf_test_inference": 0.43771619990002364
+  },
+  "complexity": {
+    "qubits": 4,
+    "circuit_layers": 2,
+    "variational_parameters_per_member": 24,
+    "ensemble_members": 3,
+    "hybrid_head_input_dimensions": 8,
+    "rf_estimators_per_head": 160
+  },
+  "uncertainty_semantics": {
+    "predicted_probability": "mean classification-head probability",
+    "model_uncertainty": "standard deviation across independently seeded hybrid members",
+    "bayesian_belief_uncertainty": "belief probabilities and entropy supplied as observable features",
+    "simulator_stochasticity": "aleatoric data-generation variation; not isolated by this model"
+  },
+  "limitations": [
+    "Synthetic simulator data only; no operational generalization is established.",
+    "Ensemble dispersion is heuristic epistemic uncertainty, not a validated confidence interval.",
+    "NO_OP dominates the release, so rare-action metrics have high variance.",
+    "Five consequence heads do not generate a complete next state and cannot support imagined RL rollouts.",
+    "No quantum advantage is claimed; compare the measured metrics and computational cost."
+  ]
+}

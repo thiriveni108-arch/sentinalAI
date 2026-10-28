@@ -1,0 +1,87 @@
+{
+  "target_distributions": {
+    "target_cumulative_exposure": {
+      "unique": 866,
+      "mean": 1.9364184674619351,
+      "std": 1.1131877330289837,
+      "min": 0.31000000000000005,
+      "max": 4.147225903053904
+    },
+    "target_cumulative_disruption": {
+      "unique": 102,
+      "mean": 1.1161819559822221,
+      "std": 0.7746408767678703,
+      "min": 0.0,
+      "max": 3.2888793599999997
+    },
+    "target_recovery_burden": {
+      "unique": 46,
+      "mean": 0.3822160493827161,
+      "std": 0.19468532184403892,
+      "min": 0.0,
+      "max": 0.85
+    },
+    "target_delayed_adaptation": {
+      "unique": 2,
+      "mean": 0.5376543209876543,
+      "std": 0.49873409013419634,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "target_severe_outcome": {
+      "unique": 2,
+      "mean": 0.2271604938271605,
+      "std": 0.41912652065456385,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "target_time_to_containment": {
+      "unique": 4,
+      "mean": 5.583950617283951,
+      "std": 0.8165909022871845,
+      "min": 3.0,
+      "max": 6.0
+    },
+    "target_unresolved": {
+      "unique": 2,
+      "mean": 0.7870370370370371,
+      "std": 0.40952810169322107,
+      "min": 0.0,
+      "max": 1.0
+    }
+  },
+  "action_support": {
+    "REQUIRE_FRESH_MFA": 180,
+    "REVOKE_SESSION": 180,
+    "DISABLE_ACCOUNT": 180,
+    "REMOVE_PRIVILEGE": 180,
+    "RESTRICT_RESOURCE": 180,
+    "DISABLE_BULK_EXPORT": 180,
+    "ISOLATE_DEVICE": 180,
+    "SEGMENT_SERVICE": 180,
+    "NO_OP": 180
+  },
+  "policy_support": {
+    "observation_only": 270,
+    "immediate_containment": 270,
+    "minimally_disruptive": 270,
+    "escalating": 270,
+    "evidence_seeking": 270,
+    "policy_constrained": 270
+  },
+  "delayed_adaptation_count": 871,
+  "severe_count": 368,
+  "first_vs_cumulative_exposure_spearman": 0.697591733502283,
+  "short_term_reversal_pair_count": 1374,
+  "minimal_disruption_security_preserved_count": 84,
+  "checks": {
+    "nonzero_recovery": true,
+    "delayed_adaptation": true,
+    "containment_timing_diversity": true,
+    "severe_and_nonsevere": true,
+    "exposure_not_first_step_deterministic": true,
+    "short_term_reversal_cases": true,
+    "minimal_disruption_security_preserved_cases": true
+  },
+  "passed": true
+}

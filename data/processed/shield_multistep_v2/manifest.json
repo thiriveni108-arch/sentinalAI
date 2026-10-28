@@ -1,0 +1,111 @@
+{
+  "dataset_version": "shield-multistep-counterfactual-v2.0.0",
+  "simulator_version": "shield-multistep-consequence-v3.0.0",
+  "policy_version": "shield-continuation-policies-v1.0.0",
+  "generation_seed": 65001,
+  "horizon": 5,
+  "rows": 6480,
+  "initial_conditions": 120,
+  "split_rows": {
+    "train": 4374,
+    "validation": 1296,
+    "test": 810
+  },
+  "quality": {
+    "target_distributions": {
+      "target_cumulative_exposure": {
+        "unique": 3432,
+        "mean": 1.9065532674642007,
+        "std": 1.103917873271564,
+        "min": 0.31000000000000005,
+        "max": 4.147225903053904
+      },
+      "target_cumulative_disruption": {
+        "unique": 108,
+        "mean": 1.1147935674785185,
+        "std": 0.7749780469443981,
+        "min": 0.0,
+        "max": 3.2888793599999997
+      },
+      "target_recovery_burden": {
+        "unique": 47,
+        "mean": 0.38203240740740746,
+        "std": 0.19421695161085978,
+        "min": 0.0,
+        "max": 0.85
+      },
+      "target_delayed_adaptation": {
+        "unique": 2,
+        "mean": 0.5234567901234568,
+        "std": 0.49948801814950916,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "target_severe_outcome": {
+        "unique": 2,
+        "mean": 0.2220679012345679,
+        "std": 0.41566863259053805,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "target_time_to_containment": {
+        "unique": 4,
+        "mean": 5.574691358024691,
+        "std": 0.8285544347927492,
+        "min": 3.0,
+        "max": 6.0
+      },
+      "target_unresolved": {
+        "unique": 2,
+        "mean": 0.7839506172839507,
+        "std": 0.4115801120557712,
+        "min": 0.0,
+        "max": 1.0
+      }
+    },
+    "action_support": {
+      "REQUIRE_FRESH_MFA": 720,
+      "REVOKE_SESSION": 720,
+      "DISABLE_ACCOUNT": 720,
+      "REMOVE_PRIVILEGE": 720,
+      "RESTRICT_RESOURCE": 720,
+      "DISABLE_BULK_EXPORT": 720,
+      "ISOLATE_DEVICE": 720,
+      "SEGMENT_SERVICE": 720,
+      "NO_OP": 720
+    },
+    "policy_support": {
+      "observation_only": 1080,
+      "immediate_containment": 1080,
+      "minimally_disruptive": 1080,
+      "escalating": 1080,
+      "evidence_seeking": 1080,
+      "policy_constrained": 1080
+    },
+    "delayed_adaptation_count": 3392,
+    "severe_count": 1439,
+    "first_vs_cumulative_exposure_spearman": 0.7049310012989043,
+    "short_term_reversal_pair_count": 5455,
+    "minimal_disruption_security_preserved_count": 323,
+    "checks": {
+      "nonzero_recovery": true,
+      "delayed_adaptation": true,
+      "containment_timing_diversity": true,
+      "severe_and_nonsevere": true,
+      "exposure_not_first_step_deterministic": true,
+      "short_term_reversal_cases": true,
+      "minimal_disruption_security_preserved_cases": true
+    },
+    "passed": true
+  },
+  "topology_overlap_count": 0,
+  "initial_condition_overlap_count": 0,
+  "files": {
+    "model_table.parquet": "38aa08cb072f584ec32da44d92700d085cb7c1138e001d12884ba2e372910147",
+    "rollout_transitions.parquet": "07bb5832ca44eadf09a0c43523355ebd109a18bec3677312787495000f5c2bfe"
+  },
+  "branch_isolation": "fresh environment per candidate/policy; stateless seed/tick/component random draws",
+  "input_observability": "continuation policies receive RealisticObservation only",
+  "historical_phase6_preserved": true,
+  "synthetic_not_operational": true
+}

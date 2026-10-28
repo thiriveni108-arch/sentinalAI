@@ -1,0 +1,803 @@
+{
+  "model_version": "shield-downstream-rf-v1.0.0",
+  "dataset_version": "shield-downstream-counterfactual-v1.0.0",
+  "dataset_sha256": "f4920fbd2b7d0e7d3a4e4d90e622566c99cf7df661000d61e676aa61c05300dc",
+  "vqc_trained": false,
+  "vqc_gate": "fail",
+  "vqc_reason": {
+    "target_recovery_burden": "constant zero: simulator actions emit no recovery cost",
+    "target_severe_residual_damage": "constant zero: no ATTACK_SUCCESS within four-step horizon",
+    "target_time_to_containment": "exactly 1 when resolved and horizon+1 otherwise; redundant with unresolved"
+  },
+  "feature_columns": [
+    "state_tick",
+    "active_node_count",
+    "service_health_min",
+    "service_health_mean",
+    "identity_active_fraction",
+    "identity_restricted_fraction",
+    "control_on_fraction",
+    "observed_compromise_max",
+    "observed_compromise_mean",
+    "observed_path_count",
+    "workflow_count",
+    "workflow_slo_fraction",
+    "workflow_total_demand",
+    "action_target_count",
+    "action_reversible",
+    "action_approved",
+    "approval_tier_code",
+    "action__NO_OP",
+    "action__REVOKE_SESSION",
+    "action__DISABLE_ACCOUNT",
+    "action__REQUIRE_FRESH_MFA",
+    "action__REMOVE_PRIVILEGE",
+    "action__RESTRICT_RESOURCE",
+    "action__DISABLE_BULK_EXPORT",
+    "action__ISOLATE_DEVICE",
+    "action__SEGMENT_SERVICE",
+    "action__ROLLBACK",
+    "evidence__ANOMALOUS_SESSION",
+    "evidence__POST_ACTION_MALICIOUS_ACTIVITY",
+    "evidence__POST_ACTION_NO_CONFIRMED_ACTIVITY",
+    "evidence__SENSITIVE_ACCESS_SPIKE",
+    "evidence__LATERAL_CONNECTION",
+    "evidence__BULK_EXPORT",
+    "evidence__PRIVILEGE_CHANGE",
+    "evidence__CONTAINMENT_ROUTE_SWITCH",
+    "evidence__UNSUPPORTED",
+    "belief__BENIGN",
+    "belief__CREDENTIAL_COMPROMISE",
+    "belief__MALICIOUS_INSIDER",
+    "belief__LATERAL_MOVEMENT",
+    "belief__SENSITIVE_DATA_EXFILTRATION",
+    "belief__PRIVILEGE_ESCALATION",
+    "belief__UNKNOWN",
+    "belief_entropy"
+  ],
+  "target_quality": {
+    "targets": {
+      "target_cumulative_exposure": {
+        "unique": 6,
+        "mean": 2.6050348515625004,
+        "std": 1.5724623138684433,
+        "min": 0.0,
+        "max": 4.0
+      },
+      "target_cumulative_disruption": {
+        "unique": 30,
+        "mean": 0.5360970052083334,
+        "std": 0.5501112422569411,
+        "min": 0.0,
+        "max": 2.47
+      },
+      "target_recovery_burden": {
+        "unique": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "positive": 0,
+        "positive_fraction": 0.0
+      },
+      "target_attacker_adapted": {
+        "unique": 2,
+        "mean": 0.322265625,
+        "std": 0.46749628758824896,
+        "min": 0.0,
+        "max": 1.0,
+        "positive": 495,
+        "positive_fraction": 0.322265625
+      },
+      "target_severe_residual_damage": {
+        "unique": 1,
+        "mean": 0.0,
+        "std": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "positive": 0,
+        "positive_fraction": 0.0
+      },
+      "target_time_to_containment": {
+        "unique": 2,
+        "mean": 4.109375,
+        "std": 1.6646594862649018,
+        "min": 1.0,
+        "max": 5.0
+      },
+      "target_unresolved_at_horizon": {
+        "unique": 2,
+        "mean": 0.77734375,
+        "std": 0.41616487156622545,
+        "min": 0.0,
+        "max": 1.0,
+        "positive": 1194,
+        "positive_fraction": 0.77734375
+      }
+    },
+    "per_action_support": {
+      "DISABLE_ACCOUNT": {
+        "rows": 240,
+        "adapted_positive": 85,
+        "unresolved_positive": 169
+      },
+      "DISABLE_BULK_EXPORT": {
+        "rows": 192,
+        "adapted_positive": 94,
+        "unresolved_positive": 157
+      },
+      "ISOLATE_DEVICE": {
+        "rows": 240,
+        "adapted_positive": 80,
+        "unresolved_positive": 155
+      },
+      "NO_OP": {
+        "rows": 240,
+        "adapted_positive": 0,
+        "unresolved_positive": 240
+      },
+      "REMOVE_PRIVILEGE": {
+        "rows": 96,
+        "adapted_positive": 53,
+        "unresolved_positive": 83
+      },
+      "REQUIRE_FRESH_MFA": {
+        "rows": 48,
+        "adapted_positive": 0,
+        "unresolved_positive": 48
+      },
+      "RESTRICT_RESOURCE": {
+        "rows": 96,
+        "adapted_positive": 35,
+        "unresolved_positive": 74
+      },
+      "REVOKE_SESSION": {
+        "rows": 144,
+        "adapted_positive": 51,
+        "unresolved_positive": 92
+      },
+      "SEGMENT_SERVICE": {
+        "rows": 240,
+        "adapted_positive": 97,
+        "unresolved_positive": 176
+      }
+    },
+    "per_action_means": {
+      "DISABLE_ACCOUNT": {
+        "target_cumulative_exposure": 2.2694446,
+        "target_cumulative_disruption": 1.1187083333333334,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.3541666666666667,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 3.816666666666667,
+        "target_unresolved_at_horizon": 0.7041666666666667
+      },
+      "DISABLE_BULK_EXPORT": {
+        "target_cumulative_exposure": 2.494791833333333,
+        "target_cumulative_disruption": 0.26328124999999997,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.4895833333333333,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 4.270833333333333,
+        "target_unresolved_at_horizon": 0.8177083333333334
+      },
+      "ISOLATE_DEVICE": {
+        "target_cumulative_exposure": 2.086111266666667,
+        "target_cumulative_disruption": 0.5821458333333334,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.3333333333333333,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 3.5833333333333335,
+        "target_unresolved_at_horizon": 0.6458333333333334
+      },
+      "NO_OP": {
+        "target_cumulative_exposure": 4.0,
+        "target_cumulative_disruption": 0.3108333333333333,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.0,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 5.0,
+        "target_unresolved_at_horizon": 1.0
+      },
+      "REMOVE_PRIVILEGE": {
+        "target_cumulative_exposure": 2.5555556249999998,
+        "target_cumulative_disruption": 0.28072916666666664,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.5520833333333334,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 4.458333333333333,
+        "target_unresolved_at_horizon": 0.8645833333333334
+      },
+      "REQUIRE_FRESH_MFA": {
+        "target_cumulative_exposure": 4.0,
+        "target_cumulative_disruption": 0.3166666666666667,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.0,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 5.0,
+        "target_unresolved_at_horizon": 1.0
+      },
+      "RESTRICT_RESOURCE": {
+        "target_cumulative_exposure": 2.545139041666667,
+        "target_cumulative_disruption": 0.5810416666666667,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.3645833333333333,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 4.083333333333333,
+        "target_unresolved_at_horizon": 0.7708333333333334
+      },
+      "REVOKE_SESSION": {
+        "target_cumulative_exposure": 1.99305575,
+        "target_cumulative_disruption": 0.234375,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.3541666666666667,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 3.5555555555555554,
+        "target_unresolved_at_horizon": 0.6388888888888888
+      },
+      "SEGMENT_SERVICE": {
+        "target_cumulative_exposure": 2.2847224,
+        "target_cumulative_disruption": 0.6600416666666666,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.4041666666666667,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 3.933333333333333,
+        "target_unresolved_at_horizon": 0.7333333333333333
+      }
+    },
+    "initial_conditions_with_action_dependent_variation_fraction": {
+      "target_cumulative_exposure": 0.9958333333333333,
+      "target_cumulative_disruption": 0.975,
+      "target_recovery_burden": 0.0,
+      "target_attacker_adapted": 0.8833333333333333,
+      "target_severe_residual_damage": 0.0,
+      "target_time_to_containment": 0.7958333333333333,
+      "target_unresolved_at_horizon": 0.7958333333333333
+    },
+    "relationship_to_phase4_one_step_targets": {
+      "cumulative_exposure_vs_one_step_exposure_spearman": 1.0,
+      "cumulative_disruption_vs_one_step_disruption_spearman": 0.8113421505559834,
+      "unresolved_vs_one_step_containment_spearman": -1.0,
+      "adaptation_beyond_first_step_rows": 0
+    },
+    "correlations": {
+      "target_cumulative_exposure": {
+        "target_cumulative_exposure": 1.0,
+        "target_cumulative_disruption": -0.04719720830512005,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": -0.0745817083495346,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 0.8869223512886482,
+        "target_unresolved_at_horizon": 0.8869223512886492
+      },
+      "target_cumulative_disruption": {
+        "target_cumulative_exposure": -0.04719720830512005,
+        "target_cumulative_disruption": 1.0,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.5546154701620356,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 0.19808355037552453,
+        "target_unresolved_at_horizon": 0.19808355037552466
+      },
+      "target_recovery_burden": {
+        "target_cumulative_exposure": 0.0,
+        "target_cumulative_disruption": 0.0,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.0,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 0.0,
+        "target_unresolved_at_horizon": 0.0
+      },
+      "target_attacker_adapted": {
+        "target_cumulative_exposure": -0.0745817083495346,
+        "target_cumulative_disruption": 0.5546154701620356,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 1.0,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 0.3690524768128256,
+        "target_unresolved_at_horizon": 0.36905247681282616
+      },
+      "target_severe_residual_damage": {
+        "target_cumulative_exposure": 0.0,
+        "target_cumulative_disruption": 0.0,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.0,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 0.0,
+        "target_unresolved_at_horizon": 0.0
+      },
+      "target_time_to_containment": {
+        "target_cumulative_exposure": 0.8869223512886482,
+        "target_cumulative_disruption": 0.19808355037552453,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.3690524768128256,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 1.0,
+        "target_unresolved_at_horizon": 1.0000000000000009
+      },
+      "target_unresolved_at_horizon": {
+        "target_cumulative_exposure": 0.8869223512886492,
+        "target_cumulative_disruption": 0.19808355037552466,
+        "target_recovery_burden": 0.0,
+        "target_attacker_adapted": 0.36905247681282616,
+        "target_severe_residual_damage": 0.0,
+        "target_time_to_containment": 1.0000000000000009,
+        "target_unresolved_at_horizon": 1.0
+      }
+    },
+    "invalid_targets": {
+      "target_recovery_burden": "constant zero: simulator actions emit no recovery cost",
+      "target_severe_residual_damage": "constant zero: no ATTACK_SUCCESS within four-step horizon",
+      "target_time_to_containment": "exactly 1 when resolved and horizon+1 otherwise; redundant with unresolved"
+    },
+    "vqc_gate": "fail"
+  },
+  "split_rows": {
+    "train": 1085,
+    "test": 237,
+    "validation": 214
+  },
+  "training_seconds": {
+    "random_forest": 4.028261900064535,
+    "extra_trees": 2.9041238999925554
+  },
+  "candidate_validation": {
+    "random_forest": {
+      "rows": 214,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.40404040404040403,
+          "recall": 0.6153846153846154,
+          "f1": 0.4878048780487805,
+          "balanced_accuracy": 0.6097057305110997,
+          "roc_auc": 0.7052142488384099,
+          "brier": 0.20996898430946923,
+          "ece_10_bin": 0.14046805625392578
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.8504672897196262,
+          "recall": 0.5870967741935483,
+          "f1": 0.6946564885496184,
+          "balanced_accuracy": 0.6579551667577911,
+          "roc_auc": 0.7216511755057408,
+          "brier": 0.20632959891444558,
+          "ece_10_bin": 0.1590150083839702
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.108996117228564,
+          "rmse": 1.4746886909509234,
+          "spearman": 0.4596581379504576
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.2802834524135768,
+          "rmse": 0.44615249775170807,
+          "spearman": 0.6536488850340093
+        }
+      }
+    },
+    "extra_trees": {
+      "rows": 214,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.4105263157894737,
+          "recall": 0.6,
+          "f1": 0.4875,
+          "balanced_accuracy": 0.6120805369127517,
+          "roc_auc": 0.6899328859060403,
+          "brier": 0.22271928774669797,
+          "ece_10_bin": 0.1798256933247438
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.8272727272727273,
+          "recall": 0.5870967741935483,
+          "f1": 0.6867924528301886,
+          "balanced_accuracy": 0.6325314379442317,
+          "roc_auc": 0.7118097320940405,
+          "brier": 0.2133949313401582,
+          "ece_10_bin": 0.1643166398701479
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.1207038016206448,
+          "rmse": 1.5277272168885658,
+          "spearman": 0.45943247301771356
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.28462150299550704,
+          "rmse": 0.4610965778595546,
+          "spearman": 0.6415228106906656
+        }
+      }
+    }
+  },
+  "selected_families": {
+    "target_attacker_adapted": "random_forest",
+    "target_unresolved_at_horizon": "random_forest",
+    "target_cumulative_exposure": "random_forest",
+    "target_cumulative_disruption": "random_forest"
+  },
+  "selected_test": {
+    "rows": 237,
+    "classification": {
+      "target_attacker_adapted": {
+        "precision": 0.4065040650406504,
+        "recall": 0.6756756756756757,
+        "f1": 0.5076142131979695,
+        "balanced_accuracy": 0.6139114574697397,
+        "roc_auc": 0.6756342231802355,
+        "brier": 0.22919490396729347,
+        "ece_10_bin": 0.1581980888546659
+      },
+      "target_unresolved_at_horizon": {
+        "precision": 0.875968992248062,
+        "recall": 0.6277777777777778,
+        "f1": 0.7313915857605178,
+        "balanced_accuracy": 0.6735380116959064,
+        "roc_auc": 0.7234892787524366,
+        "brier": 0.20963639435583317,
+        "ece_10_bin": 0.19092241260179907
+      }
+    },
+    "regression": {
+      "target_cumulative_exposure": {
+        "mae": 1.12919084820298,
+        "rmse": 1.476500745774713,
+        "spearman": 0.38061675265151523
+      },
+      "target_cumulative_disruption": {
+        "mae": 0.28056224149550757,
+        "rmse": 0.46985362106028405,
+        "spearman": 0.7050978089142425
+      }
+    }
+  },
+  "test_by_action": {
+    "DISABLE_ACCOUNT": {
+      "rows": 37,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.4090909090909091,
+          "recall": 0.5294117647058824,
+          "f1": 0.46153846153846156,
+          "balanced_accuracy": 0.43970588235294117,
+          "roc_auc": 0.4720588235294118,
+          "brier": 0.2728430625986061,
+          "ece_10_bin": 0.2007239015557185
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.7777777777777778,
+          "recall": 0.2692307692307692,
+          "f1": 0.4,
+          "balanced_accuracy": 0.5437062937062938,
+          "roc_auc": 0.5332167832167832,
+          "brier": 0.2904669760510446,
+          "ece_10_bin": 0.2747042594610249
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.3979766061461087,
+          "rmse": 1.6475784727173943,
+          "spearman": -0.14581754666751845
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.9326861419027813,
+          "rmse": 1.0374399029538643,
+          "spearman": 0.029662445015438528
+        }
+      }
+    },
+    "DISABLE_BULK_EXPORT": {
+      "rows": 31,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.47368421052631576,
+          "recall": 0.6,
+          "f1": 0.5294117647058824,
+          "balanced_accuracy": 0.4875,
+          "roc_auc": 0.5083333333333333,
+          "brier": 0.28964663248481204,
+          "ece_10_bin": 0.19790464070057187
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.9047619047619048,
+          "recall": 0.7037037037037037,
+          "f1": 0.7916666666666666,
+          "balanced_accuracy": 0.6018518518518519,
+          "roc_auc": 0.5694444444444444,
+          "brier": 0.21343040957122283,
+          "ece_10_bin": 0.2895436910689164
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.035375572968335,
+          "rmse": 1.3449823980315838,
+          "spearman": 0.15652269163937732
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.06263427675002606,
+          "rmse": 0.11277978800432836,
+          "spearman": 0.7929820606447293
+        }
+      }
+    },
+    "ISOLATE_DEVICE": {
+      "rows": 37,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.2608695652173913,
+          "recall": 0.6,
+          "f1": 0.36363636363636365,
+          "balanced_accuracy": 0.48518518518518516,
+          "roc_auc": 0.5185185185185185,
+          "brier": 0.28293963852059034,
+          "ece_10_bin": 0.29491526030420384
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.875,
+          "recall": 0.3181818181818182,
+          "f1": 0.4666666666666667,
+          "balanced_accuracy": 0.6257575757575757,
+          "roc_auc": 0.5606060606060606,
+          "brier": 0.29190019054516,
+          "ece_10_bin": 0.2477879538745471
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.602895475639668,
+          "rmse": 1.8089769650808,
+          "spearman": 0.0732933181484606
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.2747671346256075,
+          "rmse": 0.3059628400206957,
+          "spearman": 0.454029370833812
+        }
+      }
+    },
+    "NO_OP": {
+      "rows": 37,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "balanced_accuracy": 1.0,
+          "roc_auc": null,
+          "brier": 0.000552761971284356,
+          "ece_10_bin": 0.018534358258892505
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "balanced_accuracy": 1.0,
+          "roc_auc": null,
+          "brier": 0.0014626075379211541,
+          "ece_10_bin": 0.02095593720298172
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 0.0,
+          "rmse": 0.0,
+          "spearman": null
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.0013806837681845914,
+          "rmse": 0.006079059020384442,
+          "spearman": 0.9752397037009908
+        }
+      }
+    },
+    "REMOVE_PRIVILEGE": {
+      "rows": 15,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.4666666666666667,
+          "recall": 1.0,
+          "f1": 0.6363636363636364,
+          "balanced_accuracy": 0.5,
+          "roc_auc": 0.6696428571428572,
+          "brier": 0.278605947612094,
+          "ece_10_bin": 0.3549157362276073
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.9230769230769231,
+          "recall": 0.9230769230769231,
+          "f1": 0.9230769230769231,
+          "balanced_accuracy": 0.7115384615384616,
+          "roc_auc": 0.6346153846153846,
+          "brier": 0.14408758022181342,
+          "ece_10_bin": 0.17324818841441728
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.2388768265724288,
+          "rmse": 1.4231849073602287,
+          "spearman": -0.0065344012288807984
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.02351703549106161,
+          "rmse": 0.048981034804263,
+          "spearman": 0.9639783722175774
+        }
+      }
+    },
+    "REQUIRE_FRESH_MFA": {
+      "rows": 6,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1": 0.0,
+          "balanced_accuracy": 1.0,
+          "roc_auc": null,
+          "brier": 0.03127608314306522,
+          "ece_10_bin": 0.17239950807308962
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1": 1.0,
+          "balanced_accuracy": 1.0,
+          "roc_auc": null,
+          "brier": 0.040164071637424976,
+          "ece_10_bin": 0.18761251680116717
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 0.0,
+          "rmse": 0.0,
+          "spearman": null
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.0010743951208101038,
+          "rmse": 0.0013694215878647439,
+          "spearman": 0.9534625892455922
+        }
+      }
+    },
+    "RESTRICT_RESOURCE": {
+      "rows": 16,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.25,
+          "recall": 0.2857142857142857,
+          "f1": 0.26666666666666666,
+          "balanced_accuracy": 0.30952380952380953,
+          "roc_auc": 0.3015873015873016,
+          "brier": 0.3951261612590198,
+          "ece_10_bin": 0.4341061352943044
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.9,
+          "recall": 0.6428571428571429,
+          "f1": 0.75,
+          "balanced_accuracy": 0.5714285714285714,
+          "roc_auc": 0.4821428571428571,
+          "brier": 0.22374192819670255,
+          "ece_10_bin": 0.3190923446723564
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.0621611241916593,
+          "rmse": 1.294000650500131,
+          "spearman": 0.277028103189371
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.3989485536395331,
+          "rmse": 0.4266446978308994,
+          "spearman": 0.3507465438223815
+        }
+      }
+    },
+    "REVOKE_SESSION": {
+      "rows": 21,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.4166666666666667,
+          "recall": 1.0,
+          "f1": 0.5882352941176471,
+          "balanced_accuracy": 0.78125,
+          "roc_auc": 0.71875,
+          "brier": 0.2620079546681315,
+          "ece_10_bin": 0.3886193431109243
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.5,
+          "recall": 0.13333333333333333,
+          "f1": 0.21052631578947367,
+          "balanced_accuracy": 0.39999999999999997,
+          "roc_auc": 0.6222222222222222,
+          "brier": 0.33207072046793484,
+          "ece_10_bin": 0.4115629442165709
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.5819902586786871,
+          "rmse": 1.7996544971793687,
+          "spearman": 0.07090407888783844
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.07655364440931878,
+          "rmse": 0.1037176875889033,
+          "spearman": 0.9840439324233528
+        }
+      }
+    },
+    "SEGMENT_SERVICE": {
+      "rows": 37,
+      "classification": {
+        "target_attacker_adapted": {
+          "precision": 0.5,
+          "recall": 0.9230769230769231,
+          "f1": 0.6486486486486487,
+          "balanced_accuracy": 0.7115384615384616,
+          "roc_auc": 0.7788461538461539,
+          "brier": 0.2314811664231544,
+          "ece_10_bin": 0.2315029977228816
+        },
+        "target_unresolved_at_horizon": {
+          "precision": 0.6666666666666666,
+          "recall": 0.7,
+          "f1": 0.6829268292682927,
+          "balanced_accuracy": 0.6441176470588235,
+          "roc_auc": 0.6735294117647059,
+          "brier": 0.23000343266314274,
+          "ece_10_bin": 0.13534159142355218
+        }
+      },
+      "regression": {
+        "target_cumulative_exposure": {
+          "mae": 1.5051296058948294,
+          "rmse": 1.7544701322500142,
+          "spearman": 0.16228434162923122
+        },
+        "target_cumulative_disruption": {
+          "mae": 0.3101277521700611,
+          "rmse": 0.38430729647082573,
+          "spearman": 0.6467714779857301
+        }
+      }
+    }
+  },
+  "planning_value": {
+    "target_cumulative_exposure": {
+      "mean_within_condition_spearman": 0.3605295434784598,
+      "pairwise_action_order_accuracy": 0.6939759036144578,
+      "comparable_pairs": 415
+    },
+    "target_cumulative_disruption": {
+      "mean_within_condition_spearman": 0.5933336255337575,
+      "pairwise_action_order_accuracy": 0.8186274509803921,
+      "comparable_pairs": 408
+    }
+  },
+  "validation_status": {
+    "target_cumulative_exposure": "validated_synthetic",
+    "target_cumulative_disruption": "validated_synthetic",
+    "target_attacker_adapted": "validated_synthetic",
+    "target_unresolved_at_horizon": "validated_synthetic",
+    "target_time_to_containment": "redundant_derived",
+    "target_recovery_burden": "unsupported_constant",
+    "target_severe_residual_damage": "unsupported_constant"
+  },
+  "limitations": [
+    "Synthetic four-step rollouts only.",
+    "Continuation policy is NO_OP after the candidate intervention.",
+    "Recovery burden and severe damage are absent under current simulator/horizon semantics.",
+    "Time-to-containment is censored and redundant with unresolved-at-horizon.",
+    "Tree dispersion is heuristic model uncertainty, not a confidence interval.",
+    "No VQC or quantum advantage claim is scientifically justified."
+  ]
+}

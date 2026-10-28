@@ -1,0 +1,18 @@
+{
+  "experiment_version": "shield-containment-qkernel-q4-v1.0.0",
+  "dataset_release": "shield-world-transitions-v2.0.0",
+  "target": "target_contained",
+  "qubits": 4,
+  "circuit_depth": 2,
+  "training_subset_size": 320,
+  "alignment_subset_size": 160,
+  "alignment_steps": 6,
+  "seeds": [42073, 42089, 42101],
+  "pca_components": 4,
+  "svm_c_grid": [0.1, 1.0, 10.0],
+  "projected_gamma_grid": [0.25, 1.0, 4.0],
+  "ensemble_rf_weight_grid": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+  "selection_policy": "deterministic target-stratified training-only sampling",
+  "validation_policy": "hyperparameters, operating thresholds and ensemble weight selected on validation only",
+  "test_policy": "untouched frozen Phase 4 test split"
+}

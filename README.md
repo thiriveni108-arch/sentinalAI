@@ -223,3 +223,19 @@ Benchmark values are deterministic synthetic results, not deployment-performance
 Run the bounded six-trial matrix with `python scripts/benchmark_shield_qaoa.py multiple-routes`. It compares COBYLA and Powell, depth 1 and 2, 512 and 1,024 shots, three deterministic seeds, and fixed/ramp/random initializations. Parameter optimization uses exact statevector expectation; shots are reserved for final sampling. The reported quantum candidate is the lowest-cost classically feasible measured sample, not merely the most frequent sample.
 
 On the verified flagship run, all 256 eight-qubit bitstrings matched the independent semantic objective with zero energy mismatches. The six-trial matrix produced 100% trial-level feasibility, best and median feasible cost 3, approximation ratio 1.0, zero absolute and relative gap, and median runtime about 384 ms on the validation machine. Circuit depth was 16 for p=1 and 28 for p=2. These small simulated results demonstrate formulation correctness, not scaling or quantum advantage.
+
+## Phase 5 hybrid quantum world model
+
+The experimental four-qubit PennyLane consequence predictor is implemented as a separately versioned, read-only service. It retains the Phase 4 feature and target contracts and is not promoted over the classical model. Architecture, reproducible benchmarks, calibration findings, uncertainty semantics, and limitations are documented in `docs/research/shield-phase5-hybrid-quantum-world-model.md`.
+
+## Phase 5B trainable quantum kernel
+
+The bounded containment experiment compares fixed fidelity, projected, and trainable projected four-qubit kernels against subset-matched classical baselines. The learned kernel underperformed, and no model was integrated or promoted. Full results and the stop recommendation are documented in `docs/research/shield-phase5b-trainable-quantum-kernel.md`.
+
+## Phase 6 downstream consequence modeling
+
+Phase 6 adds isolated matched-seed counterfactual rollouts and a read-only classical consequence scorer. Target validation found constant severe-damage and recovery-burden labels plus substantial redundancy with one-step outcomes, so no new VQC was trained and adaptive QAOA remains deferred. See `docs/research/shield-phase6-downstream-consequence-modeling.md`.
+
+## Phase 6.5 multi-step consequence realism
+
+Phase 6.5 introduces a separately versioned causal simulator with recovery operations, rollback tradeoffs, delayed attacker adaptation, genuine versus temporary containment, explicit severe outcomes, and six defender continuation policies. The pilot and full release pass all target-diversity checks. Phase 7 is conditionally ready for classical planning research, but QAOA changes remain deferred pending predictive and uncertainty validation. See `docs/research/shield-phase6-5-multistep-consequence-realism.md`.

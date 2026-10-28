@@ -24,11 +24,27 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/shield_downstream_v1/
+!data/processed/shield_downstream_v1/model_table.parquet
+!data/processed/shield_downstream_v1/rollout_transitions.parquet
+!data/processed/shield_downstream_v1/manifest.json
+!data/processed/shield_multistep_v2/
+!data/processed/shield_multistep_v2/model_table.parquet
+!data/processed/shield_multistep_v2/rollout_transitions.parquet
+!data/processed/shield_multistep_v2/pilot_report.json
+!data/processed/shield_multistep_v2/manifest.json
 artifacts/models/*
 !artifacts/models/.gitkeep
 !artifacts/models/cert_r4_2_qsvc.pkl
+!artifacts/models/shield_quantum_world_model_q4_v1.pkl
+!artifacts/models/shield_quantum_kernel_q4_v1.pkl
+!artifacts/models/shield_downstream_consequence_v1.pkl
 artifacts/reports/*
 !artifacts/reports/.gitkeep
+!artifacts/reports/shield_quantum_world_model_q4_v1.json
+!artifacts/reports/shield_quantum_kernel_q4_v1.json
+!artifacts/reports/shield_downstream_consequence_v1.json
+!artifacts/reports/shield_multistep_realism_v2.json
 
 .DS_Store
 

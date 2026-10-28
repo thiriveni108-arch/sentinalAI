@@ -1,0 +1,291 @@
+{
+  "dataset_version": "shield-multistep-counterfactual-v2.0.0",
+  "simulator_version": "shield-multistep-consequence-v3.0.0",
+  "pilot_passed": true,
+  "rows": 6480,
+  "initial_conditions": 120,
+  "split_rows": {
+    "train": 4374,
+    "validation": 1296,
+    "test": 810
+  },
+  "quality": {
+    "target_distributions": {
+      "target_cumulative_exposure": {
+        "unique": 3432,
+        "mean": 1.9065532674642007,
+        "std": 1.103917873271564,
+        "min": 0.31000000000000005,
+        "max": 4.147225903053904
+      },
+      "target_cumulative_disruption": {
+        "unique": 108,
+        "mean": 1.1147935674785185,
+        "std": 0.7749780469443981,
+        "min": 0.0,
+        "max": 3.2888793599999997
+      },
+      "target_recovery_burden": {
+        "unique": 47,
+        "mean": 0.38203240740740746,
+        "std": 0.19421695161085978,
+        "min": 0.0,
+        "max": 0.85
+      },
+      "target_delayed_adaptation": {
+        "unique": 2,
+        "mean": 0.5234567901234568,
+        "std": 0.49948801814950916,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "target_severe_outcome": {
+        "unique": 2,
+        "mean": 0.2220679012345679,
+        "std": 0.41566863259053805,
+        "min": 0.0,
+        "max": 1.0
+      },
+      "target_time_to_containment": {
+        "unique": 4,
+        "mean": 5.574691358024691,
+        "std": 0.8285544347927492,
+        "min": 3.0,
+        "max": 6.0
+      },
+      "target_unresolved": {
+        "unique": 2,
+        "mean": 0.7839506172839507,
+        "std": 0.4115801120557712,
+        "min": 0.0,
+        "max": 1.0
+      }
+    },
+    "action_support": {
+      "REQUIRE_FRESH_MFA": 720,
+      "REVOKE_SESSION": 720,
+      "DISABLE_ACCOUNT": 720,
+      "REMOVE_PRIVILEGE": 720,
+      "RESTRICT_RESOURCE": 720,
+      "DISABLE_BULK_EXPORT": 720,
+      "ISOLATE_DEVICE": 720,
+      "SEGMENT_SERVICE": 720,
+      "NO_OP": 720
+    },
+    "policy_support": {
+      "observation_only": 1080,
+      "immediate_containment": 1080,
+      "minimally_disruptive": 1080,
+      "escalating": 1080,
+      "evidence_seeking": 1080,
+      "policy_constrained": 1080
+    },
+    "delayed_adaptation_count": 3392,
+    "severe_count": 1439,
+    "first_vs_cumulative_exposure_spearman": 0.7049310012989043,
+    "short_term_reversal_pair_count": 5455,
+    "minimal_disruption_security_preserved_count": 323,
+    "checks": {
+      "nonzero_recovery": true,
+      "delayed_adaptation": true,
+      "containment_timing_diversity": true,
+      "severe_and_nonsevere": true,
+      "exposure_not_first_step_deterministic": true,
+      "short_term_reversal_cases": true,
+      "minimal_disruption_security_preserved_cases": true
+    },
+    "passed": true
+  },
+  "comparison_to_frozen_phase6": {
+    "recovery_burden": {
+      "phase6_unique": 1,
+      "phase65_unique": 47,
+      "phase6_mean": 0.0,
+      "phase65_mean": 0.38203240740740746
+    },
+    "severe_outcome": {
+      "phase6_positive": 0,
+      "phase65_positive": 1439,
+      "phase65_rate": 0.2220679012345679
+    },
+    "delayed_adaptation": {
+      "phase6_beyond_first_step": 0,
+      "phase65_positive": 3392,
+      "phase65_rate": 0.5234567901234568
+    },
+    "containment_time_unique": {
+      "phase6": 2,
+      "phase65": 4
+    },
+    "first_vs_cumulative_exposure_spearman": {
+      "phase6": 1.0,
+      "phase65": 0.7049310012989043
+    }
+  },
+  "per_candidate_action": {
+    "DISABLE_ACCOUNT": {
+      "rows": 720,
+      "exposure_mean": 0.3295103738124157,
+      "disruption_mean": 1.2656505471999997,
+      "recovery_mean": 0.49833333333333335,
+      "delayed_adaptation_rate": 0.02361111111111111,
+      "severe_rate": 0.0,
+      "containment_time_mean": 4.666666666666667,
+      "unresolved_rate": 0.3333333333333333
+    },
+    "DISABLE_BULK_EXPORT": {
+      "rows": 720,
+      "exposure_mean": 3.0026903890115757,
+      "disruption_mean": 0.9896134607999999,
+      "recovery_mean": 0.3290694444444444,
+      "delayed_adaptation_rate": 0.6638888888888889,
+      "severe_rate": 0.3541666666666667,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    },
+    "ISOLATE_DEVICE": {
+      "rows": 720,
+      "exposure_mean": 0.3295103738124157,
+      "disruption_mean": 1.9612943231999997,
+      "recovery_mean": 0.6183333333333333,
+      "delayed_adaptation_rate": 0.02361111111111111,
+      "severe_rate": 0.0,
+      "containment_time_mean": 4.666666666666667,
+      "unresolved_rate": 0.3333333333333333
+    },
+    "NO_OP": {
+      "rows": 720,
+      "exposure_mean": 2.667225367982544,
+      "disruption_mean": 0.6525218595555555,
+      "recovery_mean": 0.21055555555555555,
+      "delayed_adaptation_rate": 0.525,
+      "severe_rate": 0.3680555555555556,
+      "containment_time_mean": 5.833333333333333,
+      "unresolved_rate": 0.8333333333333334
+    },
+    "REMOVE_PRIVILEGE": {
+      "rows": 720,
+      "exposure_mean": 1.3698695685153883,
+      "disruption_mean": 0.7929484355911112,
+      "recovery_mean": 0.30425,
+      "delayed_adaptation_rate": 0.6291666666666667,
+      "severe_rate": 0.02638888888888889,
+      "containment_time_mean": 5.322222222222222,
+      "unresolved_rate": 0.6611111111111111
+    },
+    "REQUIRE_FRESH_MFA": {
+      "rows": 720,
+      "exposure_mean": 2.649260228400146,
+      "disruption_mean": 0.6957201475911111,
+      "recovery_mean": 0.20791666666666664,
+      "delayed_adaptation_rate": 0.7138888888888889,
+      "severe_rate": 0.3638888888888889,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    },
+    "RESTRICT_RESOURCE": {
+      "rows": 720,
+      "exposure_mean": 2.291314712946587,
+      "disruption_mean": 1.2267611098666664,
+      "recovery_mean": 0.44616666666666666,
+      "delayed_adaptation_rate": 0.7430555555555556,
+      "severe_rate": 0.16527777777777777,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    },
+    "REVOKE_SESSION": {
+      "rows": 720,
+      "exposure_mean": 2.1442549770807147,
+      "disruption_mean": 0.6717619859555556,
+      "recovery_mean": 0.2575,
+      "delayed_adaptation_rate": 0.6430555555555556,
+      "severe_rate": 0.31805555555555554,
+      "containment_time_mean": 5.683333333333334,
+      "unresolved_rate": 0.8944444444444445
+    },
+    "SEGMENT_SERVICE": {
+      "rows": 720,
+      "exposure_mean": 2.3753434156160202,
+      "disruption_mean": 1.776870237546667,
+      "recovery_mean": 0.5661666666666666,
+      "delayed_adaptation_rate": 0.7458333333333333,
+      "severe_rate": 0.4027777777777778,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    }
+  },
+  "per_continuation_policy": {
+    "escalating": {
+      "rows": 1080,
+      "exposure_mean": 1.644392213605615,
+      "disruption_mean": 2.257792082962963,
+      "recovery_mean": 0.5551944444444444,
+      "delayed_adaptation_rate": 0.7490740740740741,
+      "severe_rate": 0.03611111111111111,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    },
+    "evidence_seeking": {
+      "rows": 1080,
+      "exposure_mean": 1.665150483956523,
+      "disruption_mean": 0.8450806164385185,
+      "recovery_mean": 0.42833333333333334,
+      "delayed_adaptation_rate": 0.674074074074074,
+      "severe_rate": 0.046296296296296294,
+      "containment_time_mean": 5.537037037037037,
+      "unresolved_rate": 0.7703703703703704
+    },
+    "immediate_containment": {
+      "rows": 1080,
+      "exposure_mean": 1.8707228925672434,
+      "disruption_mean": 1.4524395813925923,
+      "recovery_mean": 0.40088888888888885,
+      "delayed_adaptation_rate": 0.4787037037037037,
+      "severe_rate": 0.08425925925925926,
+      "containment_time_mean": 5.377777777777778,
+      "unresolved_rate": 0.6444444444444445
+    },
+    "minimally_disruptive": {
+      "rows": 1080,
+      "exposure_mean": 2.1392563386329533,
+      "disruption_mean": 0.6742703404088888,
+      "recovery_mean": 0.28888888888888886,
+      "delayed_adaptation_rate": 0.5268518518518519,
+      "severe_rate": 0.4722222222222222,
+      "containment_time_mean": 5.266666666666667,
+      "unresolved_rate": 0.6444444444444445
+    },
+    "observation_only": {
+      "rows": 1080,
+      "exposure_mean": 2.380783832222855,
+      "disruption_mean": 0.6117464367407407,
+      "recovery_mean": 0.2488888888888889,
+      "delayed_adaptation_rate": 0.0,
+      "severe_rate": 0.5972222222222222,
+      "containment_time_mean": 5.266666666666667,
+      "unresolved_rate": 0.6444444444444445
+    },
+    "policy_constrained": {
+      "rows": 1080,
+      "exposure_mean": 1.7390138438000153,
+      "disruption_mean": 0.8474323469274073,
+      "recovery_mean": 0.37,
+      "delayed_adaptation_rate": 0.712037037037037,
+      "severe_rate": 0.0962962962962963,
+      "containment_time_mean": 6.0,
+      "unresolved_rate": 1.0
+    }
+  },
+  "mean_action_rank_spearman_first_vs_cumulative_exposure": 0.8403749557999469,
+  "rank_groups": 720,
+  "phase7_readiness": "conditional_research_ready_not_operational",
+  "recommendation": "Proceed to a bounded classical adaptive-planning formulation study before any QAOA change; validate constraints and uncertainty on held-out topology groups.",
+  "limitations": [
+    "Synthetic environment with deliberately bounded causal rules, not an operational digital twin.",
+    "Recovery dependencies are aggregate rather than a full service dependency graph.",
+    "Approval is modeled as a constraint but human response-time distributions are not yet modeled.",
+    "Continuation policies are deterministic functions of defender observations.",
+    "Severe outcomes follow explicit simulator predicates but require external domain validation.",
+    "No predictive model, VQC, quantum kernel, QAOA, or live action integration was trained or changed."
+  ]
+}

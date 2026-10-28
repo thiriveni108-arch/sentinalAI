@@ -1,0 +1,526 @@
+{
+  "model_version": "shield-containment-qkernel-q4-v1.0.0",
+  "task": "target_contained",
+  "dataset_sha256": "b57763d0312a22d8aa4209f90823653c5f42f106d9701580220980945257bac5",
+  "configuration": {
+    "qubits": 4,
+    "depth": 2,
+    "subset_size": 320,
+    "alignment_size": 160,
+    "seeds": [
+      42073,
+      42089,
+      42101
+    ],
+    "alignment_steps": 6,
+    "selection": "deterministic target-stratified sampling from training only; no validation/test outcomes used"
+  },
+  "support": {
+    "full_train": {
+      "rows": 3709,
+      "negative": 3450,
+      "positive": 259,
+      "positive_fraction": 0.06983014289565921,
+      "per_action": {
+        "NO_OP": {
+          "rows": 2644,
+          "positive": 0
+        },
+        "REVOKE_SESSION": {
+          "rows": 105,
+          "positive": 46
+        },
+        "DISABLE_ACCOUNT": {
+          "rows": 181,
+          "positive": 17
+        },
+        "REQUIRE_FRESH_MFA": {
+          "rows": 21,
+          "positive": 0
+        },
+        "REMOVE_PRIVILEGE": {
+          "rows": 76,
+          "positive": 16
+        },
+        "RESTRICT_RESOURCE": {
+          "rows": 91,
+          "positive": 26
+        },
+        "DISABLE_BULK_EXPORT": {
+          "rows": 161,
+          "positive": 47
+        },
+        "ISOLATE_DEVICE": {
+          "rows": 214,
+          "positive": 57
+        },
+        "SEGMENT_SERVICE": {
+          "rows": 169,
+          "positive": 50
+        },
+        "ROLLBACK": {
+          "rows": 47,
+          "positive": 0
+        }
+      }
+    },
+    "selected_train": {
+      "rows": 320,
+      "negative": 298,
+      "positive": 22,
+      "positive_fraction": 0.06875,
+      "per_action": {
+        "NO_OP": {
+          "rows": 229,
+          "positive": 0
+        },
+        "REVOKE_SESSION": {
+          "rows": 5,
+          "positive": 2
+        },
+        "DISABLE_ACCOUNT": {
+          "rows": 14,
+          "positive": 1
+        },
+        "REQUIRE_FRESH_MFA": {
+          "rows": 6,
+          "positive": 0
+        },
+        "REMOVE_PRIVILEGE": {
+          "rows": 10,
+          "positive": 4
+        },
+        "RESTRICT_RESOURCE": {
+          "rows": 8,
+          "positive": 0
+        },
+        "DISABLE_BULK_EXPORT": {
+          "rows": 13,
+          "positive": 4
+        },
+        "ISOLATE_DEVICE": {
+          "rows": 22,
+          "positive": 9
+        },
+        "SEGMENT_SERVICE": {
+          "rows": 10,
+          "positive": 2
+        },
+        "ROLLBACK": {
+          "rows": 3,
+          "positive": 0
+        }
+      }
+    },
+    "validation": {
+      "rows": 697,
+      "negative": 640,
+      "positive": 57,
+      "positive_fraction": 0.08177905308464849,
+      "per_action": {
+        "NO_OP": {
+          "rows": 514,
+          "positive": 0
+        },
+        "REVOKE_SESSION": {
+          "rows": 16,
+          "positive": 9
+        },
+        "DISABLE_ACCOUNT": {
+          "rows": 20,
+          "positive": 6
+        },
+        "REQUIRE_FRESH_MFA": {
+          "rows": 16,
+          "positive": 0
+        },
+        "REMOVE_PRIVILEGE": {
+          "rows": 8,
+          "positive": 2
+        },
+        "RESTRICT_RESOURCE": {
+          "rows": 12,
+          "positive": 4
+        },
+        "DISABLE_BULK_EXPORT": {
+          "rows": 21,
+          "positive": 8
+        },
+        "ISOLATE_DEVICE": {
+          "rows": 47,
+          "positive": 16
+        },
+        "SEGMENT_SERVICE": {
+          "rows": 33,
+          "positive": 12
+        },
+        "ROLLBACK": {
+          "rows": 10,
+          "positive": 0
+        }
+      }
+    },
+    "test": {
+      "rows": 813,
+      "negative": 757,
+      "positive": 56,
+      "positive_fraction": 0.06888068880688807,
+      "per_action": {
+        "NO_OP": {
+          "rows": 593,
+          "positive": 0
+        },
+        "REVOKE_SESSION": {
+          "rows": 18,
+          "positive": 8
+        },
+        "DISABLE_ACCOUNT": {
+          "rows": 30,
+          "positive": 2
+        },
+        "REQUIRE_FRESH_MFA": {
+          "rows": 6,
+          "positive": 0
+        },
+        "REMOVE_PRIVILEGE": {
+          "rows": 14,
+          "positive": 3
+        },
+        "RESTRICT_RESOURCE": {
+          "rows": 20,
+          "positive": 4
+        },
+        "DISABLE_BULK_EXPORT": {
+          "rows": 37,
+          "positive": 11
+        },
+        "ISOLATE_DEVICE": {
+          "rows": 47,
+          "positive": 14
+        },
+        "SEGMENT_SERVICE": {
+          "rows": 38,
+          "positive": 14
+        },
+        "ROLLBACK": {
+          "rows": 10,
+          "positive": 0
+        }
+      }
+    }
+  },
+  "pca_explained_variance_ratio": [
+    0.25933172192607634,
+    0.10014495549655288,
+    0.09015886294274562,
+    0.06459911924807452
+  ],
+  "matched_subset_results": {
+    "matched_random_forest": {
+      "metrics": {
+        "precision": 0.26666666666666666,
+        "recall": 0.9285714285714286,
+        "f1": 0.41434262948207173,
+        "balanced_accuracy": 0.8698339309303642,
+        "roc_auc": 0.9027882619362144,
+        "pr_auc": 0.3033349969889766,
+        "brier": 0.08491122425314487,
+        "ece_10_bin": 0.11322830168751961,
+        "decision_threshold": 0.428595237472931
+      },
+      "training_seconds": 0.32606450002640486,
+      "test_inference_seconds": 0.07726789999287575
+    },
+    "matched_rbf_svm": {
+      "metrics": {
+        "precision": 0.3188405797101449,
+        "recall": 0.7857142857142857,
+        "f1": 0.4536082474226804,
+        "balanced_accuracy": 0.8307699565955841,
+        "roc_auc": 0.8896725797320248,
+        "pr_auc": 0.27748302651726275,
+        "brier": 0.05719800529217778,
+        "ece_10_bin": 0.03452011958321426,
+        "decision_threshold": 0.07305100861361426
+      },
+      "training_seconds": 0.013879799982532859,
+      "test_inference_seconds": 0.0112574000377208
+    },
+    "matched_neural_network": {
+      "metrics": {
+        "precision": 0.24817518248175183,
+        "recall": 0.6071428571428571,
+        "f1": 0.35233160621761656,
+        "balanced_accuracy": 0.7355397244763162,
+        "roc_auc": 0.8249315908662012,
+        "pr_auc": 0.3238935438592655,
+        "brier": 0.19011149429993465,
+        "ece_10_bin": 0.36524520762442564,
+        "decision_threshold": 0.5258024746858132
+      },
+      "training_seconds": 0.06094979995395988,
+      "test_inference_seconds": 0.0008361999643966556
+    },
+    "standard_fidelity_kernel": {
+      "metrics": {
+        "precision": 0.22012578616352202,
+        "recall": 0.625,
+        "f1": 0.32558139534883723,
+        "balanced_accuracy": 0.7305977542932629,
+        "roc_auc": 0.836549348933761,
+        "pr_auc": 0.20598395155348506,
+        "brier": 0.05936020310592563,
+        "ece_10_bin": 0.029792653355825687,
+        "decision_threshold": 0.11843799085680505
+      },
+      "tuning": {
+        "C": 1.0,
+        "validation_pr_auc": 0.2840391441320153
+      }
+    },
+    "projected_quantum_kernel": {
+      "metrics": {
+        "precision": 0.17266187050359713,
+        "recall": 0.42857142857142855,
+        "f1": 0.24615384615384617,
+        "balanced_accuracy": 0.6383279864125306,
+        "roc_auc": 0.7757123985657671,
+        "pr_auc": 0.20489454137238877,
+        "brier": 0.06047248582536146,
+        "ece_10_bin": 0.022671559499320683,
+        "decision_threshold": 0.11864707721283128
+      },
+      "tuning": {
+        "gamma": 0.25,
+        "validation_pr_auc": 0.20164114601503264
+      }
+    },
+    "trainable_projected_kernel": {
+      "metrics": {
+        "precision": 0.1651376146788991,
+        "recall": 0.32142857142857145,
+        "f1": 0.21818181818181817,
+        "balanced_accuracy": 0.6006086053972448,
+        "roc_auc": 0.7259860351009625,
+        "pr_auc": 0.19878221864133164,
+        "brier": 0.06233811129538599,
+        "ece_10_bin": 0.013223660638264818,
+        "decision_threshold": 0.08889888782868031
+      },
+      "seed_metric_std": {
+        "f1": 0.03261800168901024,
+        "roc_auc": 0.04022812936301296,
+        "pr_auc": 0.006813714482298752,
+        "brier": 0.001056859293035001
+      },
+      "optimization": [
+        {
+          "seed": 42073,
+          "alignment": 0.05312824399329794,
+          "history": [
+            0.05154485203728158,
+            0.051842015865579925,
+            0.050057765171185965,
+            0.049508823080649425,
+            0.05312824399329794,
+            0.04923198799999887
+          ],
+          "validation_pr_auc": 0.2493473754721142,
+          "gamma": 1.0
+        },
+        {
+          "seed": 42089,
+          "alignment": 0.05650177662579285,
+          "history": [
+            0.05464258630480079,
+            0.053227107814679486,
+            0.053802179712055705,
+            0.052877673541221595,
+            0.05650177662579285,
+            0.05451853955571226
+          ],
+          "validation_pr_auc": 0.15909680292991718,
+          "gamma": 1.0
+        },
+        {
+          "seed": 42101,
+          "alignment": 0.05874303945971997,
+          "history": [
+            0.05099249220616744,
+            0.05634255556050193,
+            0.051999732062451676,
+            0.05874303945971997,
+            0.0528931025557492,
+            0.05338689864754288
+          ],
+          "validation_pr_auc": 0.2319726391188133,
+          "gamma": 0.25
+        }
+      ]
+    }
+  },
+  "full_data_context_not_matched": {
+    "frozen_random_forest": {
+      "precision": 0.3161290322580645,
+      "recall": 0.875,
+      "f1": 0.46445497630331756,
+      "balanced_accuracy": 0.8674867899603699,
+      "roc_auc": 0.9228392149462163,
+      "pr_auc": 0.34346805208779896,
+      "brier": 0.08264798145627886,
+      "ece_10_bin": 0.09472037114650884,
+      "decision_threshold": 0.5
+    },
+    "phase5_hybrid_vqc": {
+      "precision": 0.20725388601036268,
+      "recall": 0.7142857142857143,
+      "f1": 0.321285140562249,
+      "balanced_accuracy": 0.7560860539724477,
+      "roc_auc": 0.8518352519343272,
+      "pr_auc": 0.1924236618945623,
+      "brier": 0.1582910820892119,
+      "ece_10_bin": 0.24660225507416608,
+      "decision_threshold": 0.5
+    }
+  },
+  "complementarity": {
+    "rf_error_count": 113,
+    "quantum_error_count": 56,
+    "both_wrong": 7,
+    "rf_only_wrong": 106,
+    "quantum_only_wrong": 49,
+    "both_correct": 651,
+    "validation_selected_rf_weight": 0.30000000000000004,
+    "ensemble_test": {
+      "precision": 0.29411764705882354,
+      "recall": 0.5357142857142857,
+      "f1": 0.379746835443038,
+      "balanced_accuracy": 0.7203010001887149,
+      "roc_auc": 0.9244432911870164,
+      "pr_auc": 0.3962572061798751,
+      "brier": 0.05045909107281781,
+      "ece_10_bin": 0.04548285918467842,
+      "decision_threshold": 0.24802988928363823
+    },
+    "integration_promoted": false
+  },
+  "trainable_test_by_action": {
+    "NO_OP": {
+      "rows": 593,
+      "note": "both classes required for complete metrics"
+    },
+    "REVOKE_SESSION": {
+      "precision": 1.0,
+      "recall": 0.375,
+      "f1": 0.5454545454545454,
+      "balanced_accuracy": 0.6875,
+      "roc_auc": 0.775,
+      "pr_auc": 0.8638888888888889,
+      "brier": 0.3758871085563947,
+      "ece_10_bin": 0.36642908493742854,
+      "decision_threshold": 0.08889888782868031
+    },
+    "DISABLE_ACCOUNT": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "balanced_accuracy": 0.4642857142857143,
+      "roc_auc": 0.3571428571428571,
+      "pr_auc": 0.08116883116883117,
+      "brier": 0.0629309967322721,
+      "ece_10_bin": 0.00040201038067461115,
+      "decision_threshold": 0.08889888782868031
+    },
+    "REQUIRE_FRESH_MFA": {
+      "rows": 6,
+      "note": "both classes required for complete metrics"
+    },
+    "REMOVE_PRIVILEGE": {
+      "precision": 0.42857142857142855,
+      "recall": 1.0,
+      "f1": 0.6,
+      "balanced_accuracy": 0.8181818181818181,
+      "roc_auc": 0.7272727272727273,
+      "pr_auc": 0.4206349206349206,
+      "brier": 0.17602660797027392,
+      "ece_10_bin": 0.1200323043207982,
+      "decision_threshold": 0.08889888782868031
+    },
+    "RESTRICT_RESOURCE": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "balanced_accuracy": 0.40625,
+      "roc_auc": 0.4921875,
+      "pr_auc": 0.26367053998632944,
+      "brier": 0.17745907370783992,
+      "ece_10_bin": 0.13867999988483473,
+      "decision_threshold": 0.08889888782868031
+    },
+    "DISABLE_BULK_EXPORT": {
+      "precision": 0.25,
+      "recall": 0.2727272727272727,
+      "f1": 0.2608695652173913,
+      "balanced_accuracy": 0.4632867132867133,
+      "roc_auc": 0.4143356643356643,
+      "pr_auc": 0.3358503173868199,
+      "brier": 0.25763964697175495,
+      "ece_10_bin": 0.21767487859359103,
+      "decision_threshold": 0.08889888782868031
+    },
+    "ISOLATE_DEVICE": {
+      "precision": 0.23809523809523808,
+      "recall": 0.35714285714285715,
+      "f1": 0.2857142857142857,
+      "balanced_accuracy": 0.43614718614718617,
+      "roc_auc": 0.45454545454545453,
+      "pr_auc": 0.358768990500681,
+      "brier": 0.2551650730710147,
+      "ece_10_bin": 0.21157224791331466,
+      "decision_threshold": 0.08889888782868031
+    },
+    "SEGMENT_SERVICE": {
+      "precision": 0.3333333333333333,
+      "recall": 0.2857142857142857,
+      "f1": 0.3076923076923077,
+      "balanced_accuracy": 0.47619047619047616,
+      "roc_auc": 0.5357142857142857,
+      "pr_auc": 0.4553741592781001,
+      "brier": 0.3083846379047199,
+      "ece_10_bin": 0.2813405528843519,
+      "decision_threshold": 0.08889888782868031
+    },
+    "ROLLBACK": {
+      "rows": 10,
+      "note": "both classes required for complete metrics"
+    }
+  },
+  "cost": {
+    "fixed_state_construction_seconds_by_split": {
+      "train": 3.173183000064455,
+      "validation": 2.180197999929078,
+      "test": 2.4760684000793844
+    },
+    "standard_fidelity_test_inference_seconds": 2.477409900049679,
+    "projected_test_inference_seconds": 2.484079800080508,
+    "trainable_test_inference_seconds_by_seed": [
+      3.7992434999905527,
+      3.9035917000146583,
+      4.091906700050458
+    ],
+    "trainable_optimization_and_fit_seconds": 63.682421599980444,
+    "fidelity_train_kernel_shape": [
+      320,
+      320
+    ],
+    "trainable_parameters_per_seed": 16
+  },
+  "limitations": [
+    "Synthetic simulator data only.",
+    "The quantum models use a bounded subset and are compared fairly to subset-matched classical models.",
+    "Positive containment support is small, especially within rare actions.",
+    "SVC probabilities are not guaranteed operationally calibrated.",
+    "Three seeds and a small alignment search provide limited uncertainty evidence.",
+    "No quantum advantage or integration promotion is claimed."
+  ]
+}
