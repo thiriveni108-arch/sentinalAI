@@ -22,7 +22,7 @@ class RewardWeights:
     containment:float=2.; exposure:float=.7; severe:float=3.; disruption:float=.6; recovery:float=.4; action:float=.15; repeat:float=.25; ineligible:float=.5; waiting:float=.8; rejected:float=.7
 @dataclass(frozen=True)
 class Transition:
-    observation:tuple[float,...]; mask:tuple[bool,...]; action:int; reward:float; reward_parts:Mapping[str,float]; next_observation:tuple[float,...]; terminated:bool; truncated:bool; provenance:str="simulated"
+    observation:tuple[float,...]; mask:tuple[bool,...]; action:int; reward:float; reward_parts:Mapping[str,float]; next_observation:tuple[float,...]; terminated:bool; truncated:bool; provenance:str="simulated"; approval:str="unknown"; executed_action:str|None=None
 @dataclass(frozen=True)
 class Recommendation:
     version:str; action:str; probabilities:tuple[float,...]; action_mask:tuple[bool,...]; observable_inputs:tuple[float,...]; warnings:tuple[str,...]; out_of_distribution:bool; advisory_only:bool=True
@@ -86,7 +86,8 @@ class ShieldRLEnvironment:
             reward=float(sum(parts.values())); terminated=transition.genuinely_contained_gt or transition.severe_outcome_gt
             if selected!="NO_OP": self.active=tuple(sorted(set(self.active+(selected,))))
         self.last_action=selected if selected in ACTIONS else self.last_action; self.steps+=1; truncated=self.steps>=self.horizon and not terminated; next_obs=self._observation()
-        item=Transition(tuple(self._last_observation if hasattr(self,"_last_observation") else next_obs),mask,action,reward,parts,next_obs,terminated,truncated)
+        approval=result.get("approval","unknown"); executed_action=selected if approval=="automatic-candidate" else None
+        item=Transition(tuple(self._last_observation if hasattr(self,"_last_observation") else next_obs),mask,action,reward,parts,next_obs,terminated,truncated,"simulated",approval,executed_action)
         self.trajectory.append(item); self._last_observation=next_obs
         return next_obs,reward,terminated,truncated,{"result":result,"reward_components":parts,"oracle_available_to_policy":False}
     def export_trajectory(self): return tuple(self.trajectory)
@@ -202,12 +203,33 @@ class HybridQuantumQRLPolicy(ClassicalQRLPolicy):
         return {"episodes":episodes,"returns":returns,"algorithm":"end-to-end masked REINFORCE: classical projection + four-qubit VQC + policy head","replay_used_for_updates":False,"quantum_gradient_norms":quantum_gradient_norms,"projection_gradient_norms":projection_gradient_norms,"quantum_parameters_updated":bool(any(x>1e-10 for x in quantum_gradient_norms))}
 
 class PolicyRegistry:
-    states=frozenset({"BASELINE","EXPERIMENTAL","VALIDATED","REJECTED","APPROVED_FOR_SIMULATION"})
-    def __init__(self): self.entries={}
-    def register(self,name,policy,stage="EXPERIMENTAL"): 
+    """In-memory policy metadata; policies remain advisory and simulator-only."""
+    states=frozenset({"BASELINE","EXPERIMENTAL","TRAINED","VALIDATION_FAILED","VALIDATED","PENDING_APPROVAL","APPROVED_FOR_SIMULATION","ACTIVE_SIMULATION","ROLLED_BACK","ARCHIVED","REJECTED"})
+    def __init__(self): self.entries={}; self.active_name=None
+    def register(self,name,policy,stage="EXPERIMENTAL",provenance=None):
         if stage not in self.states: raise ValueError(stage)
-        self.entries[name]={"policy":policy,"stage":stage,"auto_promote":False}
+        self.entries[name]={"policy":policy,"stage":stage,"auto_promote":False,"provenance":provenance or {},"approval":None,"previous":None}
     def get(self,name): return self.entries[name]
+    def set_stage(self,name,stage):
+        if stage not in self.states: raise ValueError(stage)
+        self.entries[name]["stage"]=stage
+    def approve_for_simulation(self,name,actor_id,actor_role):
+        if actor_role!="model_governor": raise PermissionError("model-governor approval required")
+        if self.entries[name]["stage"]!="PENDING_APPROVAL": raise ValueError("candidate is not pending approval")
+        self.entries[name]["stage"]="APPROVED_FOR_SIMULATION"; self.entries[name]["approval"]={"actor_id":actor_id,"role":actor_role}
+    def activate(self,name,actor_id,actor_role):
+        if actor_role!="model_governor": raise PermissionError("model-governor activation required")
+        if self.entries[name]["stage"]!="APPROVED_FOR_SIMULATION": raise ValueError("candidate is not approved")
+        previous=self.active_name
+        if previous: self.entries[previous]["stage"]="ROLLED_BACK"
+        self.entries[name]["previous"]=previous; self.entries[name]["stage"]="ACTIVE_SIMULATION"; self.entries[name]["activation_actor"]=actor_id; self.active_name=name
+    def rollback(self,actor_id,actor_role):
+        if actor_role!="model_governor": raise PermissionError("model-governor rollback required")
+        if not self.active_name: raise ValueError("no active simulation policy")
+        active=self.active_name; previous=self.entries[active]["previous"]
+        self.entries[active]["stage"]="ROLLED_BACK"; self.active_name=previous
+        if previous: self.entries[previous]["stage"]="ACTIVE_SIMULATION"
+        return active,previous
 
 def phase8_proposal_from_recommendation(recommendation:Recommendation, incident_id:str, targets:tuple[str,...], state_version:int, prediction:Mapping[str,float]):
     """Convert advisory output to a Phase 8 proposal; it conveys no authority."""

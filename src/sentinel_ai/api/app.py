@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Header
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -151,8 +151,10 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     from sentinel_ai.shield import ShieldService
     from sentinel_ai.shield.autonomous_defense import (Actor, DefenseCoordinator, DefenseStore,
         MultiStepConsequenceEnvironment, Proposal)
+    from sentinel_ai.shield.continuous_learning import ExperienceStore, LearningCoordinator
     shield = ShieldService()
     autonomous_defense = DefenseCoordinator(DefenseStore(resolved_database_path.with_name("shield_phase8.db")))
+    learning = LearningCoordinator(ExperienceStore(resolved_database_path.with_name("shield_phase10_learning.db")))
     cert = CertResearchService()
     incidents = IncidentService(resolved_database_path, cert, shield)
 
@@ -310,6 +312,41 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         except KeyError as error: raise HTTPException(404,{"code":"phase8_proposal_not_found","message":proposal_id}) from error
         except PermissionError as error: raise HTTPException(403,{"code":"phase8_execution_denied","message":str(error)}) from error
         except ValueError as error: raise HTTPException(409,{"code":"phase8_execution_invalid","message":str(error)}) from error
+
+    def require_model_governance(token: Annotated[str | None, Header(alias="X-Model-Governance-Token")] = None) -> str:
+        expected=os.environ.get("SENTINEL_MODEL_GOVERNANCE_TOKEN")
+        if not expected or token != expected: raise HTTPException(403,{"code":"model_governance_denied","message":"Server-validated model-governance token required."})
+        return "server-validated-model-governor"
+
+    @app.get("/api/shield/learning/experiences", response_model=dict[str, object])
+    def learning_experiences() -> dict[str, object]: return {"version":"shield-experience-v1","items":learning.store.history(),"drift":learning.store.drift()}
+
+    @app.post("/api/shield/learning/experiences", response_model=dict[str, object], status_code=201)
+    def ingest_learning_experience(payload: Annotated[dict[str, object], Body()]) -> dict[str, object]:
+        result=learning.store.ingest(payload); return {"eligible":result.eligible,"reasons":result.reasons,"fingerprint":result.fingerprint}
+
+    @app.post("/api/shield/learning/cycles", response_model=dict[str, object], status_code=201)
+    def start_learning_cycle(payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
+        try:return learning.run(str(payload.get("algorithm","classical")),int(payload.get("episodes",8)),int(payload.get("seed",100)),int(payload.get("minimumEpisodes",3)))
+        except RuntimeError as error: raise HTTPException(409,{"code":"learning_cycle_conflict","message":str(error)}) from error
+
+    @app.get("/api/shield/learning/cycles", response_model=dict[str, object])
+    def learning_cycles() -> dict[str, object]: return {"items":learning.cycles()}
+
+    @app.get("/api/shield/learning/policies", response_model=dict[str, object])
+    def learning_policies() -> dict[str, object]: return {"active":learning.registry.active_name,"policies":{name:{k:v for k,v in entry.items() if k!="policy"} for name,entry in learning.registry.entries.items()}}
+
+    @app.post("/api/shield/learning/policies/{name}/approve", response_model=dict[str, object])
+    def approve_learning_policy(name:str, _actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
+        learning.registry.approve_for_simulation(name,_actor,"model_governor"); return learning.registry.get(name)
+
+    @app.post("/api/shield/learning/policies/{name}/activate", response_model=dict[str, object])
+    def activate_learning_policy(name:str, _actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
+        learning.registry.activate(name,_actor,"model_governor"); return {"active":learning.registry.active_name,"policy":learning.registry.get(name)}
+
+    @app.post("/api/shield/learning/policies/rollback", response_model=dict[str, object])
+    def rollback_learning_policy(_actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
+        active,previous=learning.registry.rollback(_actor,"model_governor"); return {"rolled_back":active,"active":previous}
 
     @app.exception_handler(HTTPException)
     async def http_error(_request: Request, error: HTTPException) -> JSONResponse:
