@@ -59,30 +59,42 @@ it does not claim full approval-delay, live recovery, or enterprise-topology
 coverage. Learning-curve reward is distinct from security effectiveness. The
 small VQC is CPU simulation, not hardware performance or quantum advantage.
 
-## Finalization evaluation
+## Corrected evaluation
 
-The reproducible report uses training seeds 100–147 and separate matched
-evaluation seeds 901–905 over credential compromise, lateral movement, insider
-misuse, exfiltration and benign conditions. It includes Phase 7 classical and
-QAOA action references, early and late RL checkpoints, raw learning returns and
-actual outcome metrics.
+`shield_phase9_qrl_benchmark_v2.json` uses two independent training seeds
+(101, 202), checkpoints at 24 and 48 episodes, six matched scenario classes,
+and three separate held-out seeds per class (18 episodes/policy). It reports
+per-scenario rows, aggregate means/standard deviations, containment, severe
+outcomes, exposure, disruption, recovery, approvals, unnecessary restrictions,
+policy violations and decision latency. The accompanying PNG is a learning
+checkpoint curve, not evidence of deployment readiness.
 
-| Policy | Containment | Severe | Exposure | Disruption | Approval events |
+The earlier fixed-action “Phase 7” rows were removed. The replacement adapters
+invoke the real Phase 7 exact classical solver or QAOA solver with the frozen
+Phase 7 predictor, current visible observation, the same automatic-action mask,
+and a shared Phase 8-safe action mapping. This is explicitly **diagnostic only**:
+the predictor was trained at tick zero, so later sequential states are outside
+its support. It must not be read as a fair generalization comparison.
+
+| Policy / protocol | Containment | Severe | Exposure | Disruption | Mean latency |
 |---|---:|---:|---:|---:|---:|
-| Phase 7 classical reference | 0.0 | 0.8 | 2.492 | 0.135 | 0.0 |
-| Phase 7 QAOA reference | 0.0 | 0.8 | 2.636 | 0.078 | 0.0 |
-| Classical RL | 0.0 | 0.4 | 1.880 | 0.075 | 1.8 |
-| Hybrid QRL, four qubits | 0.8 | 0.0 | 0.747 | 0.273 | 1.6 |
+| Real Phase 7 exact adapter (diagnostic) | 0.833 | 0.000 | 0.729 | 0.281 | 244 ms |
+| Real Phase 7 QAOA adapter (diagnostic) | 0.833 | 0.000 | 0.729 | 0.324 | 502 ms |
+| Classical RL, seed 101, 48 episodes | 0.833 | 0.000 | 0.822 | 0.287 | <1 ms |
+| Hybrid QRL, seed 101, 48 episodes | 0.000 | 0.833 | 2.142 | 0.223 | 5.4 ms |
 
-The hybrid policy improves from its early checkpoint (0.0 containment, 0.8
-severe rate and 2.059 exposure) on this *small synthetic protocol*. Its higher
-reward is therefore accompanied by better simulated security outcomes, not only
-approval waiting. However it also creates more disruption and approvals than the
-static references, and the sample is too small and structurally homogeneous for
-promotion. It remains `EXPERIMENTAL`; Phase 7 remains the reference planner and
-Phase 8 remains the sole execution authority. Phase 10 continuous learning is
-not ready until a diverse topology/business-dependency simulator and a
-pre-registered larger held-out study exist.
+The hybrid QRL policy is unstable across training seeds and worsens substantially
+at the later checkpoint for seed 101. It is therefore **not** an improvement,
+has no evidence of quantum advantage, and remains `EXPERIMENTAL`. Classical RL
+is also not promoted: its performance is small-sample synthetic evidence only.
+The VQC, projection and policy head now receive end-to-end gradients, but
+optimization correctness does not establish defensive usefulness. Phase 7 stays
+the reference planner, and Phase 8 stays the sole execution authority.
+
+Phase 10 is not ready. Required prerequisites are a topology/business-dependency
+simulator with genuinely diverse initial conditions, a validated benign/approval
+contract, a prespecified statistical evaluation plan and stable multi-seed QRL
+results.
 
 Reproduce:
 

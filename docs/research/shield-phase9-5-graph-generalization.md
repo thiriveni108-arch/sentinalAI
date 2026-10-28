@@ -1,0 +1,104 @@
+# SHIELD Phase 9.5 — graph-aware simulation and QRL generalization
+
+## Scope
+
+Phase 9.5 extends `MultiStepConsequenceEnvironment`; it does not introduce a
+second simulator, production adapter, continuous learning loop, or independent
+QRL execution capability.  The CyberBattleSim ideas used are limited to an
+annotated graph, routes, vulnerabilities, and partial observation.  No
+CyberBattleSim source or runtime dependency is included.
+
+## Contract
+
+`TopologyScenario` version `shield-topology-scenario-v1` defines hosts,
+identities, services/resources, network/authentication/privilege connections,
+route prerequisites, criticality, and business workflow dependencies.  Six
+structurally distinct families are included: small office, segmented enterprise,
+multi-department, privileged administration, critical service, and redundant
+services.  `grouped_split()` holds out whole topology families, rather than
+mistaking different random seeds for network generalization.
+
+The pre-existing Phase 6.5 symbolic-route scenarios remain the default.  A
+topology is opt-in through `MultiStepConsequenceEnvironment(..., topology=...)`
+or `ShieldRLEnvironment(..., graph_features=True)`.
+
+## Consequences and safety
+
+Supported SHIELD controls now remove explicitly affected graph routes:
+
+- MFA/session/account actions affect declared identity paths.
+- Privilege removal affects routes requiring privileged access.
+- Resource/export controls affect sensitive-resource paths.
+- Isolation changes declared host availability; segmentation blocks declared
+  network edges.
+
+Containment requires no accessible *or latent* route and no recovery task that
+can restore attacker access.  Blocking one route is therefore only temporary
+suppression when alternatives remain.  Workflow availability is calculated from
+declared dependencies; broad isolation and segmentation create measurable
+business disruption.  A rollback restores only graph capabilities named by its
+approved recovery task, never unrelated routes.
+
+The QRL adapter can expose four aggregate defender-safe graph-posture features:
+node/connection scale, workflow availability, and criticality/disruption
+posture.  It does not expose route identifiers, latent routes, attacker
+capability, progress, ownership, or vulnerability preconditions.  QRL remains
+an advisory recommendation source and Phase 8 retains every authorization,
+approval, execution, verification, and recovery decision.
+
+## Phase 7 integration
+
+`GraphAwareConsequencePredictor` wraps the frozen Phase 7 predictor with a
+transparent structural adjustment: declared route coverage reduces only the
+structurally addressed exposure, while declared workflow loss increases
+disruption and recovery cost.  It is explicitly `diagnostic_only`: the frozen
+predictor has not been trained or calibrated on graph scenarios.  The existing
+exact/QAOA planners consume it through their unchanged `make_problem` contract.
+No graph-era Phase 7 result is a validated generalization claim until a
+graph-grouped consequence data set supports retraining and held-out calibration.
+
+## Reproducibility and actual checks
+
+`scripts/benchmark_phase95_graph_qrl.py` trains classical and four-qubit QRL on
+the training topology families and evaluates complete held-out families across
+three seeds.  It emits containment, severe outcomes, exposure, disruption,
+recovery burden, approval events, policy violations, reward, and latency with
+mean/std uncertainty.  It invokes the real Phase 7 classical/QAOA adapters and
+labels them diagnostic-only.
+
+Focused automated evidence: 23 tests passed using the repository virtual
+environment, including the existing Phase 6.5, Phase 8, and Phase 9 suites plus
+the Phase 9.5 topology tests.  The new end-to-end planner test demonstrates a
+different recommendation for small-office versus redundant-service dependency
+graphs under the same visible incident and base consequences; the difference is
+the explicit workflow-disruption term, not an oracle attack route.
+
+The reproducible benchmark completed in 57 seconds on this workspace (two
+training seeds, checkpoints at 12 and 24 episodes, 24 held-out episodes per
+checkpoint). It does **not** show reliable learning or quantum advantage:
+
+| system/checkpoint | held-out containment | severe outcomes | exposure | disruption | reward |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Classical RL, seed 101 / 24 | 0.75 | 0.00 | 0.753 | 0.312 | -1.250 |
+| Classical RL, seed 202 / 24 | 0.00 | 0.50 | 1.612 | 0.065 | -4.943 |
+| Hybrid QRL, seed 101 / 24 | 0.00 | 0.083 | 0.762 | 0.130 | -2.261 |
+| Hybrid QRL, seed 202 / 24 | 0.00 | 0.00 | 0.319 | 0.641 | -2.815 |
+
+The real Phase 7 classical and QAOA adapters both recorded 0.375 containment
+and zero severe outcomes over 24 held-out episodes, but are diagnostic-only:
+their frozen predictor is outside graph-state training support. The benchmark
+JSON and learning-curve image are regenerated by the script and must be read
+with the uncertainty fields, not as a promotion recommendation.
+
+## Limitations and Phase 10 readiness
+
+The graph families are compact synthetic templates, not a claim of enterprise
+fidelity.  Vulnerability preconditions influence route eligibility but are not a
+full exploit/emulation model.  The graph-aware Phase 7 correction is a modeling
+assumption, not learned validation.  Current QRL training budgets are research
+scale, so the benchmark must not be read as a quantum-advantage result.
+
+Phase 10 continuous learning is not implemented.  Readiness is limited to
+controlled, offline graph-scenario data generation, predictor retraining with
+family-grouped calibration, and repeated held-out evaluation before any model
+promotion discussion.

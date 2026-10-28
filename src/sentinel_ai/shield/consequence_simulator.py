@@ -12,8 +12,10 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
+from .topology import TopologyScenario, topology_scenario
 
-SIMULATOR_VERSION = "shield-multistep-consequence-v3.0.0"
+
+SIMULATOR_VERSION = "shield-multistep-consequence-v3.1.0"
 POLICY_VERSION = "shield-continuation-policies-v1.0.0"
 ACTION_TYPES = ("NO_OP", "REQUIRE_FRESH_MFA", "REVOKE_SESSION", "DISABLE_ACCOUNT",
                 "REMOVE_PRIVILEGE", "RESTRICT_RESOURCE", "DISABLE_BULK_EXPORT",
@@ -57,6 +59,9 @@ class RealisticState:
     severe_outcome_gt: bool
     contained_gt: bool
     terminal: bool
+    topology_id: str | None = None
+    disabled_nodes_gt: tuple[str, ...] = ()
+    blocked_connections_gt: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -77,6 +82,7 @@ class SimulatedAction:
     action_type: str
     approved: bool = True
     prerequisite: str | None = None
+    targets: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -108,12 +114,15 @@ def _draw(seed: int, tick: int, component: str) -> float:
 class MultiStepConsequenceEnvironment:
     """Small causal simulator with delayed adaptation, recovery, and severe outcomes."""
 
-    def __init__(self, family: str, seed: int, max_steps: int = 8) -> None:
+    def __init__(self, family: str, seed: int, max_steps: int = 8,
+                 topology: TopologyScenario | str | None = None) -> None:
         self.seed, self.max_steps = int(seed), int(max_steps)
-        routes = tuple(f"{family}:route-{index}" for index in range(3))
+        self.topology = topology_scenario(topology) if isinstance(topology, str) else topology
+        routes = self.topology.initial_routes() if self.topology else tuple(f"{family}:route-{index}" for index in range(3))
+        latent = self.topology.latent_routes() if self.topology else routes[2:]
         self.state = RealisticState(0, family, 1.0, True, .62, True, 1, .10, True,
-                                    routes[:2], routes[2:], routes[0], 0, 0, 0, 0, (), 0.0,
-                                    False, False, False)
+                                    routes, latent, routes[0] if routes else None, 0, 0, 0, 0, (), 0.0,
+                                    False, False, False, self.topology.identifier if self.topology else None)
         self.history: list[ConsequenceTransition] = []
         self.action_history: list[str] = []
 
@@ -123,12 +132,24 @@ class MultiStepConsequenceEnvironment:
                                     state.observed_compromise, state.observed_malicious_activity,
                                     state.evidence_count, bool(state.recovery_tasks), state.terminal)
 
+    def topology_posture(self) -> tuple[float, float, float, float]:
+        """Defender-safe graph context: no route IDs, attacker ownership, or prerequisites."""
+        if not self.topology:
+            return (0.0, 0.0, 1.0, 0.0)
+        nodes = max(1, len(self.topology.nodes)); routes = max(1, len(self.topology.routes))
+        availability = self.topology.workflow_availability(set(self.state.disabled_nodes_gt),
+                                                            set(self.state.blocked_connections_gt))
+        critical = sum(node.criticality for node in self.topology.nodes) / (5.0 * nodes)
+        return (min(1.0, nodes / 12.0), min(1.0, len(self.topology.connections) / 20.0), availability,
+                min(1.0, critical + len(self.state.disabled_nodes_gt) / routes))
+
     def step(self, action: SimulatedAction) -> ConsequenceTransition:
         if self.state.terminal:
             raise RuntimeError("terminal branch")
         current = self.state
         health, routes = current.service_health, list(current.accessible_routes_gt)
         latent, tasks = list(current.latent_routes_gt), []
+        disabled_nodes, blocked_connections = set(current.disabled_nodes_gt), set(current.blocked_connections_gt)
         recovery_cost, restored_access = 0.0, False
         for task in current.recovery_tasks:
             health = min(1.0, health + task.service_restore_per_step)
@@ -154,13 +175,33 @@ class MultiStepConsequenceEnvironment:
             routes, tasks, health, persistent, suppression_until, remediation, capability = self._apply_action(
                 action.action_type, effectiveness, routes, tasks, health, persistent,
                 current.tick, remediation, capability)
+            if self.topology:
+                routes, latent, disabled_nodes, blocked_connections = self._apply_graph_effect(
+                    action, routes, latent, disabled_nodes, blocked_connections, current.current_route_gt)
+                workflow_availability = self.topology.workflow_availability(disabled_nodes, blocked_connections)
+                health = min(health, workflow_availability)
+                persistent = max(persistent, 1.0 - workflow_availability)
         elif valid and action.action_type == "ROLLBACK":
             for task in current.recovery_tasks:
                 health = min(1.0, health + task.service_restore_per_step * task.remaining_steps)
                 recovery_cost += task.effort_per_step * task.remaining_steps + .15
                 if task.restores_attacker_access and task.route and capability:
                     routes.append(task.route); restored_access = True
+                # A rollback may restore only the route explicitly represented
+                # by its approved recovery task; it cannot reopen unrelated
+                # graph controls or latent attack paths.
+                if self.topology and task.route:
+                    route = self.topology.route(task.route)
+                    if task.source_action in {"ISOLATE_DEVICE", "RESTRICT_RESOURCE"}:
+                        disabled_nodes.difference_update(route.nodes)
+                    if task.source_action == "SEGMENT_SERVICE":
+                        blocked_connections.difference_update(zip(route.nodes, route.nodes[1:]))
             tasks = []; persistent *= .35
+
+        if self.topology:
+            workflow_availability = self.topology.workflow_availability(disabled_nodes, blocked_connections)
+            health = min(health, workflow_availability)
+            persistent = max(persistent, 1.0 - workflow_availability)
 
         if remediation == 0 and current.remediation_steps_gt > 0:
             capability = False; routes = []; latent = []
@@ -205,12 +246,30 @@ class MultiStepConsequenceEnvironment:
             observed_compromise, observed_activity, current.evidence_count + int(observed_activity), progress,
             capability, tuple(sorted(set(routes))), tuple(latent), routes[0] if routes else None,
             attacker_observations, dormant_until, suppression_until, remediation, tuple(tasks), persistent,
-            severe, genuine, terminal)
+            severe, genuine, terminal, current.topology_id, tuple(sorted(disabled_nodes)),
+            tuple(sorted(blocked_connections)))
         transition = ConsequenceTransition(current.tick, action.action_type, valid, effectiveness, exposure,
             disruption, recovery_cost, adapted, active, suppression, genuine, severe, not genuine,
             health, progress, len(routes), len(tasks))
         self.state = next_state; self.history.append(transition); self.action_history.append(action.action_type)
         return transition
+
+    def _apply_graph_effect(self, action: SimulatedAction, routes: list[str], latent: list[str],
+                            disabled_nodes: set[str], blocked_connections: set[tuple[str, str]],
+                            current_route: str | None):
+        """Apply a supported control to explicit graph paths; authority was checked by caller."""
+        assert self.topology is not None
+        affected = self.topology.affected_routes(action.action_type, action.targets, current_route)
+        routes = [route for route in routes if route not in affected]
+        latent = [route for route in latent if route not in affected]
+        selected = set(action.targets)
+        if action.action_type in {"ISOLATE_DEVICE", "RESTRICT_RESOURCE"}:
+            disabled_nodes.update(selected)
+        if action.action_type == "SEGMENT_SERVICE":
+            for route_id in affected:
+                route = self.topology.route(route_id)
+                blocked_connections.update(zip(route.nodes, route.nodes[1:]))
+        return routes, latent, disabled_nodes, blocked_connections
 
     def _apply_action(self, action: str, effectiveness: float, routes: list[str], tasks: list[RecoveryTask],
                       health: float, persistent: float, tick: int, remediation: int,

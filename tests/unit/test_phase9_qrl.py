@@ -27,7 +27,16 @@ def test_masked_probabilities_and_classical_learning():
 def test_quantum_gradient_and_probability_are_finite():
     policy=HybridQuantumQRLPolicy(); gradient=policy.quantum_gradient((.1,)*15)
     assert gradient.shape==(1,4,3) and np.isfinite(gradient).all()
+    # Beliefs, recovery, active interventions and history affect the trainable projection.
+    assert not np.allclose(policy.encode((.1,)*15),policy.encode((.1,)*12+(.9,.8,.7)))
     result=policy.recommend_response((.1,)*15,action_constraints=[True]*len(ACTIONS)); assert np.isclose(sum(result.probabilities),1)
+
+def test_end_to_end_training_updates_quantum_and_projection_parameters():
+    policy=HybridQuantumQRLPolicy(seed=31); quantum_before=policy.quantum_weights.copy(); projection_before=policy.projection_weights.copy()
+    report=policy.train(ShieldRLEnvironment(),episodes=3,seed=71)
+    assert report["quantum_parameters_updated"] and any(x>0 for x in report["quantum_gradient_norms"])
+    assert not np.allclose(quantum_before,policy.quantum_weights)
+    assert not np.allclose(projection_before,policy.projection_weights)
 
 def test_replay_deduplicates_simulated_only():
     env=ShieldRLEnvironment(); env.reset(9); env.step(0); replay=ReplayBuffer(); replay.extend(env.export_trajectory()); replay.extend(env.export_trajectory())

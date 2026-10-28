@@ -11,6 +11,7 @@ import numpy as np
 
 from .beliefs import BayesianAttackerBeliefTracker, MODES
 from .consequence_simulator import ACTION_TYPES, MultiStepConsequenceEnvironment, SimulatedAction
+from .topology import TOPOLOGY_FAMILIES
 from .dynamic_models import Evidence
 
 QRL_VERSION="shield-qrl-v1"; REPLAY_VERSION="shield-qrl-replay-v1"; ACTIONS=("NO_OP","REQUIRE_FRESH_MFA","REVOKE_SESSION","REMOVE_PRIVILEGE","RESTRICT_RESOURCE","DISABLE_BULK_EXPORT","DISABLE_ACCOUNT","ISOLATE_DEVICE","SEGMENT_SERVICE","REQUEST_HUMAN_REVIEW","REQUEST_RECOVERY")
@@ -28,22 +29,30 @@ class Recommendation:
 
 class ShieldRLEnvironment:
     """POMDP adapter: oracle state affects post-event reward only, never observation."""
-    def __init__(self,horizon:int=5,reward:RewardWeights=RewardWeights()): self.horizon,self.weights=horizon,reward
-    def reset(self,seed:int=0,scenario:str="credential-compromise"):
+    def __init__(self,horizon:int=5,reward:RewardWeights=RewardWeights(),graph_features:bool=False,
+                 topology_cycle:tuple[str,...]=()):
+        self.horizon,self.weights,self.graph_features,self.topology_cycle=horizon,reward,graph_features,tuple(topology_cycle)
+    def reset(self,seed:int=0,scenario:str="credential-compromise",topology:str|None=None):
         supported=("credential-compromise","malicious-insider","lateral-movement","sensitive-data-exfiltration","privilege-escalation")
         family="credential-compromise" if scenario=="benign" else scenario
         if family not in supported: raise ValueError(f"unsupported scenario: {scenario}")
-        self.env=MultiStepConsequenceEnvironment(family,seed,max_steps=self.horizon)
+        if topology is None and self.topology_cycle: topology=self.topology_cycle[int(seed)%len(self.topology_cycle)]
+        if topology is not None and topology not in TOPOLOGY_FAMILIES: raise ValueError(f"unsupported topology: {topology}")
+        self.env=MultiStepConsequenceEnvironment(family,seed,max_steps=self.horizon,topology=topology)
         if scenario=="benign":
             # Minimal validated false-positive adapter: no attacker capability/routes, but interventions still disrupt workflows.
             self.env.state=replace(self.env.state,attacker_capability_gt=False,accessible_routes_gt=(),latent_routes_gt=(),current_route_gt=None,observed_compromise=.10,observed_malicious_activity=False)
         self.scenario=scenario; self.tracker=BayesianAttackerBeliefTracker(); self.tracker.initialize(f"qrl-{scenario}-{seed}")
-        self.last_action="NO_OP"; self.active=(); self.steps=0; self.trajectory=[]; self.pending_action=None; self.approval_attempted=False; self._last_observation=self._observation(); return self._last_observation,{"scenario":scenario,"ground_truth_exposed":False}
+        self.last_action="NO_OP"; self.active=(); self.steps=0; self.trajectory=[]; self.pending_action=None; self.approval_attempted=False; self.topology=topology; self._last_observation=self._observation(); return self._last_observation,{"scenario":scenario,"topology":topology,"ground_truth_exposed":False}
     def _observation(self):
         o=self.env.observe(); evidence=Evidence(f"qrl-{o.tick}",o.tick,"qrl-visible-sensor","POST_ACTION_MALICIOUS_ACTIVITY" if o.observed_malicious_activity else "POST_ACTION_NO_CONFIRMED_ACTIVITY",o.observed_malicious_activity,.75,available_to_defender=True)
         if self.tracker.current.time_step < o.tick: self.tracker.update_evidence(self.tracker.current.episode_id,o.tick,(evidence,))
         b=self.tracker.current
-        return tuple([o.tick/self.horizon,o.service_health,o.observed_compromise,float(o.observed_malicious_activity),min(1,o.evidence_count/5),*([b.probabilities[m] for m in MODES]),float(o.recovery_active),min(1,len(self.active)/5),ACTIONS.index(self.last_action)/len(ACTIONS)])
+        visible=[o.tick/self.horizon,o.service_health,o.observed_compromise,float(o.observed_malicious_activity),min(1,o.evidence_count/5),*([b.probabilities[m] for m in MODES]),float(o.recovery_active),min(1,len(self.active)/5),ACTIONS.index(self.last_action)/len(ACTIONS)]
+        # Aggregate topology posture is defender-provided asset/dependency inventory,
+        # never the hidden attacker route, capability, latent paths, or ground truth.
+        if self.graph_features: visible.extend(self.env.topology_posture())
+        return tuple(visible)
     def action_mask(self):
         o=self.env.observe(); mask=[]
         if self.pending_action:
@@ -124,33 +133,73 @@ class StaticRulePolicy:
         probabilities=[0.]*len(ACTIONS); probabilities[index]=1.
         return Recommendation(self.version,ACTIONS[index],tuple(probabilities),mask,tuple(observation),("static reference; Phase 8 authorization required",),False)
 
+class Phase7PlannerAdapter:
+    """Recommendation-only bridge to the real Phase 7 exact or QAOA planner."""
+    def __init__(self,predictor,mode="classical",seed=7301):
+        if mode not in {"classical","qaoa"}: raise ValueError(mode)
+        self.predictor,self.mode,self.seed=predictor,mode,seed; self.version=f"phase7-{mode}-adapter"
+    @staticmethod
+    def _visible(observation):
+        return {"state_tick":observation[0]*5,"service_health":observation[1],"observed_compromise":observation[2],"observed_malicious_activity":observation[3],"evidence_count":observation[4]*5}
+    def recommend_response(self,observation,belief_state=None,active_interventions=(),action_constraints=None):
+        from .adaptive_planner import ActionSpec, make_problem, run_qaoa, solve_exact
+        mask=tuple(action_constraints or [True]*len(ACTIONS)); candidates=[]
+        costs={"NO_OP":0,"REQUIRE_FRESH_MFA":.12,"REVOKE_SESSION":.25,"REMOVE_PRIVILEGE":.45,"RESTRICT_RESOURCE":.55,"DISABLE_BULK_EXPORT":.35}
+        for action,cost in costs.items():
+            if mask[ACTIONS.index(action)]: candidates.append(ActionSpec(action,cost,disruption_budget=.5,reversible=True,tier="automatic"))
+        if not candidates:
+            probabilities=[0.]*len(ACTIONS); probabilities[0]=1.; return Recommendation(self.version,"NO_OP",tuple(probabilities),mask,tuple(observation),("Phase 7 adapter has no feasible automatic action",),True)
+        problem=make_problem(self.predictor,self._visible(observation),tuple(candidates),("policy_constrained",),allowed_tier="automatic")
+        plan,_ = run_qaoa(problem,shots=64,seed=self.seed) if self.mode=="qaoa" else (solve_exact(problem),{})
+        index=ACTIONS.index(plan.action); probabilities=[0.]*len(ACTIONS); probabilities[index]=1.
+        return Recommendation(self.version,plan.action,tuple(probabilities),mask,tuple(observation),("Real Phase 7 predictor/planner adapter; dynamic observations after tick zero are out of training support",),True)
+
 class HybridQuantumQRLPolicy(ClassicalQRLPolicy):
-    """Four-qubit VQC encoder with a classical masked policy head (experimental)."""
+    """End-to-end trainable projection → four-qubit VQC → masked policy head."""
     def __init__(self,features:int=15,seed:int=19):
-        super().__init__(4,seed); self.input_features=features; self.quantum_weights=np.random.default_rng(seed).normal(0,.1,(1,4,3)); self.version=QRL_VERSION+"-hybrid-q4"
+        super().__init__(4,seed); self.input_features=features; rng=np.random.default_rng(seed)
+        # All defender-visible fields are projected: state (0:5), Bayesian beliefs
+        # (5:12), recovery (12), intervention history (13:15). No oracle inputs.
+        self.projection_weights=rng.normal(0,.12,(4,features)); self.projection_bias=np.zeros(4)
+        self.quantum_weights=rng.normal(0,.1,(1,4,3)); self.version=QRL_VERSION+"-hybrid-q4-e2e"
         import pennylane as qml
         self.qml=qml; self.device=qml.device("default.qubit",wires=4,shots=None)
         @qml.qnode(self.device,interface="autograd",diff_method="backprop")
         def circuit(x,w):
             qml.AngleEmbedding(x,wires=range(4),rotation="Y"); qml.StronglyEntanglingLayers(w,wires=range(4),ranges=[1]); return tuple(qml.expval(qml.PauliZ(i)) for i in range(4))
         self.circuit=circuit
-    def encode(self,observation): return np.asarray(self.circuit(np.asarray(observation[:4])*np.pi,self.quantum_weights),dtype=float)
+    def _project(self,observation,weights=None,bias=None):
+        w=self.projection_weights if weights is None else weights; b=self.projection_bias if bias is None else bias
+        return self.qml.numpy.tanh(self.qml.numpy.dot(w,self.qml.numpy.array(observation))+b)*np.pi
+    def encode(self,observation): return np.asarray(self.circuit(self._project(observation),self.quantum_weights),dtype=float)
     def quantum_gradient(self,observation):
-        pnp=self.qml.numpy; x=pnp.array(np.asarray(observation[:4])*np.pi,requires_grad=False); w=pnp.array(self.quantum_weights,requires_grad=True); return np.asarray(self.qml.grad(lambda z:self.circuit(x,z)[0])(w))
+        pnp=self.qml.numpy; x=pnp.array(observation,requires_grad=False); p=pnp.array(self.projection_weights,requires_grad=False); b=pnp.array(self.projection_bias,requires_grad=False); w=pnp.array(self.quantum_weights,requires_grad=True)
+        return np.asarray(self.qml.grad(lambda z:self.circuit(pnp.tanh(pnp.dot(p,x)+b)*np.pi,z)[0])(w))
     def recommend_response(self,observation,belief_state=None,active_interventions=(),action_constraints=None): return super().recommend_response(self.encode(observation),belief_state,active_interventions,action_constraints)
     def train(self,environment,episodes:int=20,seed:int=1,lr:float=.03,gamma:float=.92):
-        # Train policy head on fresh trajectories; VQC remains differentiable and bounded proof-of-concept encoder.
-        original=environment.reset
-        returns=[]
+        """REINFORCE differentiates projection, VQC parameters and classical head."""
+        pnp=self.qml.numpy; projection=pnp.array(self.projection_weights,requires_grad=True); bias=pnp.array(self.projection_bias,requires_grad=True); quantum=pnp.array(self.quantum_weights,requires_grad=True); head=pnp.array(self.weights,requires_grad=True)
+        returns=[]; quantum_gradient_norms=[]; projection_gradient_norms=[]
         for ep in range(episodes):
-            obs,_=original(seed+ep,("credential-compromise","lateral-movement")[ep%2]); trajectory=[]; done=False
+            obs,_=environment.reset(seed+ep,("credential-compromise","lateral-movement","malicious-insider","sensitive-data-exfiltration","benign")[ep%5]); trajectory=[]; done=False
             while not done:
-                encoded=self.encode(obs); mask=environment.action_mask(); p=masked_softmax(self.weights@encoded,mask); a=int(self.rng.choice(len(ACTIONS),p=p)); next_obs,r,t,u,_=environment.step(a); trajectory.append((encoded,mask,a,r)); obs=next_obs; done=t or u
-            g=0.; total=0.
-            for x,m,a,r in reversed(trajectory):
-                g=r+gamma*g; p=masked_softmax(self.weights@x,m); grad=-np.outer(p,x); grad[a]+=x; self.weights+=lr*g*grad; total+=r
+                encoded=np.asarray(self.circuit(self._project(obs,projection,bias),quantum),dtype=float); mask=environment.action_mask(); p=masked_softmax(np.asarray(head)@encoded,mask); a=int(self.rng.choice(len(ACTIONS),p=p)); next_obs,r,t,u,_=environment.step(a); trajectory.append((tuple(obs),mask,a,r)); obs=next_obs; done=t or u
+            returns_to_go=[]; g=0.; total=0.
+            for _,_,_,r in reversed(trajectory): g=r+gamma*g; returns_to_go.append(g); total+=r
+            returns_to_go=list(reversed(returns_to_go)); baseline=float(np.mean(returns_to_go))
+            def loss(p,b,q,h):
+                value=0.
+                for (obs,mask,action,_),ret in zip(trajectory,returns_to_go):
+                    encoded=self.circuit(pnp.tanh(pnp.dot(p,pnp.array(obs))+b)*np.pi,q)
+                    logits=pnp.dot(h,pnp.stack(encoded)); masked=pnp.where(pnp.array(mask),logits,-1e9); probabilities=pnp.exp(masked-pnp.max(masked)); probabilities=probabilities/pnp.sum(probabilities)
+                    value-= (ret-baseline)*pnp.log(probabilities[action]+1e-12)
+                return value/len(trajectory)
+            grads=self.qml.grad(loss,argnum=(0,1,2,3))(projection,bias,quantum,head)
+            projection-=lr*grads[0]; bias-=lr*grads[1]; quantum-=lr*grads[2]; head-=lr*grads[3]
+            projection_gradient_norms.append(float(np.linalg.norm(grads[0]))); quantum_gradient_norms.append(float(np.linalg.norm(grads[2])));
             returns.append(total)
-        return {"episodes":episodes,"returns":returns,"algorithm":"on-policy masked REINFORCE with differentiable four-qubit VQC encoder","replay_used_for_updates":False}
+        self.projection_weights=np.asarray(projection); self.projection_bias=np.asarray(bias); self.quantum_weights=np.asarray(quantum); self.weights=np.asarray(head)
+        return {"episodes":episodes,"returns":returns,"algorithm":"end-to-end masked REINFORCE: classical projection + four-qubit VQC + policy head","replay_used_for_updates":False,"quantum_gradient_norms":quantum_gradient_norms,"projection_gradient_norms":projection_gradient_norms,"quantum_parameters_updated":bool(any(x>1e-10 for x in quantum_gradient_norms))}
 
 class PolicyRegistry:
     states=frozenset({"BASELINE","EXPERIMENTAL","VALIDATED","REJECTED","APPROVED_FOR_SIMULATION"})

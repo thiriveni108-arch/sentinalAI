@@ -19,6 +19,8 @@ from sklearn.metrics import (brier_score_loss, mean_absolute_error,
                              mean_squared_error, roc_auc_score)
 from scipy.stats import spearmanr
 
+from .topology import TopologyScenario
+
 
 CONTINUOUS_TARGETS = ("target_cumulative_exposure", "target_cumulative_disruption",
                       "target_recovery_burden", "target_time_to_containment")
@@ -140,6 +142,38 @@ class ConsequencePredictor:
         report["operational_rejection_reason"] = "Synthetic, structurally homogeneous initial conditions provide no empirical operational calibration."
         report["calibration_rule"] = "test ECE <= 0.10 and Brier <= 0.20; test is evaluation-only"
         return report
+
+
+class GraphAwareConsequencePredictor:
+    """Explicit structural adjustment around a frozen Phase 7 predictor.
+
+    The base Phase 7 model was not trained on graph scenarios.  This wrapper
+    makes known topology effects visible to the existing planner without
+    pretending they are empirically calibrated predictions.  Its output must
+    therefore remain diagnostic-only until a graph-grouped data set retrains
+    and validates the learned predictor.
+    """
+    diagnostic_only = True
+
+    def __init__(self, base: ConsequencePredictor, topology: TopologyScenario) -> None:
+        self.base, self.topology = base, topology
+        self.features = base.features
+
+    def predict(self, visible: Mapping[str, float], candidate: str,
+                policy: str) -> ConsequencePrediction:
+        raw = self.base.predict(visible, candidate, policy)
+        coverage, workflow_loss = self.topology.action_consequence_context(candidate)
+        means, uncertainty = dict(raw.means), dict(raw.uncertainty)
+        # Coverage reduces only structurally addressed routes; it is not an
+        # assertion that the hidden attacker currently uses those routes.
+        means["target_cumulative_exposure"] *= 1.0 - .35 * coverage
+        means["target_unresolved"] *= 1.0 - .25 * coverage
+        means["target_severe_outcome"] *= 1.0 - .15 * coverage
+        means["target_cumulative_disruption"] += 2.0 * workflow_loss
+        means["target_recovery_burden"] += .5 * workflow_loss
+        for key in uncertainty:
+            uncertainty[key] = min(1.0, uncertainty[key] + .15)
+        return ConsequencePrediction(means, uncertainty)
 
 
 def load_phase65(path: str | Path = "data/processed/shield_multistep_v2/model_table.parquet") -> pd.DataFrame:
