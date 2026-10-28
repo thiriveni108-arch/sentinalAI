@@ -34,6 +34,14 @@ def feature_columns(frame: pd.DataFrame) -> tuple[str, ...]:
     return tuple(c for c in VISIBLE_STATE if c in frame) + tuple(sorted(encoded))
 
 
+def graph_feature_columns(frame: pd.DataFrame) -> tuple[str, ...]:
+    """Decision-time graph and belief summaries; deliberately excludes IDs/audit state."""
+    base = tuple(c for c in VISIBLE_STATE if c in frame)
+    summaries = tuple(sorted(c for c in frame if c.startswith(("graph_", "belief__")) or c == "active_intervention_count"))
+    encoded = tuple(sorted(c for c in frame if c.startswith("candidate__") or c.startswith("policy__")))
+    return base + summaries + encoded
+
+
 def expected_calibration_error(y: np.ndarray, probability: np.ndarray, bins: int = 10) -> float:
     edges = np.linspace(0.0, 1.0, bins + 1)
     result = 0.0
@@ -60,8 +68,11 @@ class ConsequencePredictor:
         self.classifiers: dict[str, RandomForestClassifier] = {}
         self.calibrators: dict[str, LogisticRegression | None] = {}
 
+    def _feature_columns(self, frame: pd.DataFrame) -> tuple[str, ...]:
+        return feature_columns(frame)
+
     def fit(self, frame: pd.DataFrame) -> "ConsequencePredictor":
-        self.features = feature_columns(frame)
+        self.features = self._feature_columns(frame)
         train, validation = frame[frame.split == "train"], frame[frame.split == "validation"]
         if train.empty or validation.empty:
             raise ValueError("Frozen train and validation partitions are required")
@@ -174,6 +185,40 @@ class GraphAwareConsequencePredictor:
         for key in uncertainty:
             uncertainty[key] = min(1.0, uncertainty[key] + .15)
         return ConsequencePrediction(means, uncertainty)
+
+
+class GraphConsequencePredictor(ConsequencePredictor):
+    """Learned graph-aware consequence model trained only on visible features."""
+    model_version = "shield-graph-consequence-predictor-v1"
+
+    def __init__(self, seed: int = 96001, trees: int = 160) -> None:
+        super().__init__(seed, trees)
+        self.feature_bounds: dict[str, tuple[float, float]] = {}
+
+    def _feature_columns(self, frame: pd.DataFrame) -> tuple[str, ...]:
+        return graph_feature_columns(frame)
+
+    def fit(self, frame: pd.DataFrame) -> "GraphConsequencePredictor":
+        super().fit(frame)
+        train = frame[frame.split == "train"]
+        self.feature_bounds = {feature: (float(train[feature].min()), float(train[feature].max())) for feature in self.features}
+        return self
+
+    def predict_with_diagnostics(self, visible: Mapping[str, float], candidate: str, policy: str) -> tuple[ConsequencePrediction, dict[str, object]]:
+        prediction = self.predict(visible, candidate, policy)
+        outside = tuple(feature for feature, (low, high) in self.feature_bounds.items()
+                          if feature in visible and not low <= float(visible[feature]) <= high)
+        return prediction, {"model_version": self.model_version, "out_of_distribution": bool(outside),
+                            "outside_features": outside, "operationally_suitable": False,
+                            "reason": "synthetic graph model; simulator-only validation"}
+
+    def evaluate(self, frame: pd.DataFrame) -> dict:
+        report = super().evaluate(frame)
+        report.update({"model_version": self.model_version, "feature_observability": "graph/belief summaries only",
+                       "grouped_topology_evaluation": {split: sorted(frame[frame.split == split].topology_family.unique()) if "topology_family" in frame else [] for split in ("train", "validation", "test")},
+                       "operational_rejection_reason": "Synthetic graph scenarios validate simulator decisions only; no production calibration.",
+                       "decision_path_eligible": True})
+        return report
 
 
 def load_phase65(path: str | Path = "data/processed/shield_multistep_v2/model_table.parquet") -> pd.DataFrame:

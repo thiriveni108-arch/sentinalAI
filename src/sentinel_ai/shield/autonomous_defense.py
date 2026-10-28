@@ -48,7 +48,10 @@ class FeedbackRecord:
 
 def _now(): return datetime.now(timezone.utc)
 def _scope(p:Proposal): return hashlib.sha256(json.dumps({"i":p.incident_id,"a":p.action,"t":p.targets,"v":p.state_version},sort_keys=True).encode()).hexdigest()
-def _obs(o): return {"tick":o.tick,"service_health":o.service_health,"observed_compromise":o.observed_compromise,"observed_malicious_activity":o.observed_malicious_activity,"evidence_count":o.evidence_count,"terminal":o.terminal}
+def _obs(o, environment=None):
+    value={"tick":o.tick,"service_health":o.service_health,"observed_compromise":o.observed_compromise,"observed_malicious_activity":o.observed_malicious_activity,"evidence_count":o.evidence_count,"terminal":o.terminal}
+    if environment is not None and getattr(environment, "topology", None): value["graph_posture"]=list(environment.topology_posture())
+    return value
 
 class PolicyEngine:
     """Deterministic policy: prediction can restrict automation but never grant it."""
@@ -124,7 +127,7 @@ class SimulatorExecutor:
     """Private-permit executor; production response interfaces are never imported."""
     def execute(self, environment, proposal:Proposal, permit:object):
         if not isinstance(permit,_Permit): raise PermissionError("simulated executor requires coordinator authorization")
-        pre=_obs(environment.observe()); transition=environment.step(SimulatedAction(proposal.action,approved=True)); post=_obs(environment.observe())
+        pre=_obs(environment.observe(), environment); transition=environment.step(SimulatedAction(proposal.action,approved=True,targets=proposal.targets)); post=_obs(environment.observe(), environment)
         return {"pre":pre,"post":post,"actual":asdict(transition),"effective":transition.action_valid and (transition.exposure < .70),"contained":transition.genuinely_contained_gt,"resolved":transition.genuinely_contained_gt and not transition.severe_outcome_gt,"recovery_pending":transition.recovery_task_count>0}
 class _Permit: pass
 
@@ -133,7 +136,7 @@ class DefenseCoordinator:
     def propose(self,p:Proposal,key:str,environment:MultiStepConsequenceEnvironment):
         record,replayed=self.store.create(p,key); pid=record["proposal_id"]; self.environments[p.incident_id]=environment
         if replayed:return record
-        self.store.amend(pid,{"environment_snapshot":_obs(environment.observe())})
+        self.store.amend(pid,{"environment_snapshot":_obs(environment.observe(), environment)})
         decision=self.policy.evaluate(p,self.active_actions(p.incident_id)); record=self.store.transition(pid,Status.POLICY_EVALUATED,detail="deterministic policy evaluated",patch={"decision":asdict(decision)})
         next_state=Status.AUTO_AUTHORIZED if decision.tier==Tier.AUTOMATIC and decision.allowed else Status.PENDING_ANALYST if decision.tier==Tier.ANALYST and decision.allowed else Status.PENDING_HUMAN if decision.allowed else Status.POLICY_BLOCKED
         return self.store.transition(pid,next_state,detail="authority determined")
@@ -163,7 +166,7 @@ class DefenseCoordinator:
         if not decision.allowed or (decision.tier!=Tier.AUTOMATIC and (not approval or approval["scope_hash"]!=_scope(p) or approval["policy_version"]!=POLICY_VERSION or _now()>=datetime.fromisoformat(approval["expires_at"]))): return self.store.transition(pid,Status.POLICY_BLOCKED,"system","JIT authorization failed")
         env=self.environments.get(p.incident_id)
         if env is None:return self.store.transition(pid,Status.EXECUTION_FAILED,"system","simulator state unavailable; fail closed")
-        if r.get("environment_snapshot") != _obs(env.observe()): return self.store.transition(pid,Status.POLICY_BLOCKED,"system","simulator state changed after proposal")
+        if r.get("environment_snapshot") != _obs(env.observe(), env): return self.store.transition(pid,Status.POLICY_BLOCKED,"system","simulator state changed after proposal")
         self.store.transition(pid,Status.EXECUTING,actor.actor_id,"simulator execution started")
         try: result=self.executor.execute(env,p,_Permit())
         except Exception as exc:return self.store.transition(pid,Status.EXECUTION_FAILED,"system",f"{type(exc).__name__}: {exc}")
@@ -196,5 +199,8 @@ class DefenseCoordinator:
           observation.observed_malicious_activity,.75,available_to_defender=True)
         belief=tracker.update_evidence(f"phase8-{incident_id}",observation.tick,(evidence,))
         visible={"state_tick":observation.tick,"service_health":observation.service_health,"observed_compromise":observation.observed_compromise,"observed_malicious_activity":float(observation.observed_malicious_activity),"evidence_count":observation.evidence_count}
+        if getattr(env, "topology", None):
+            from .graph_integration import visible_graph_state
+            visible = visible_graph_state(env, belief.probabilities, tuple(self.active_actions(incident_id)))
         plan=solve_exact(make_problem(predictor,visible,actions,policies,belief_entropy=belief.normalized_entropy))
         return {"plan":asdict(plan),"planner_source":planner_source,"belief":{k.value:v for k,v in belief.probabilities.items()},"evidence_provenance":"defender-visible simulated sensor","requires_new_policy_authorization":True}

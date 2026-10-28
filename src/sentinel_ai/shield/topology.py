@@ -162,6 +162,32 @@ def topology_scenario(identifier: str) -> TopologyScenario:
     raise KeyError(f"unknown topology scenario: {identifier}")
 
 
+def topology_variant(family: str, variant: int) -> TopologyScenario:
+    """Controlled structural variants, not seed/identifier relabels.
+
+    Every variant adds a host/service path and, alternately, a dependency or
+    privilege route.  The originating family remains explicit for leakage-free
+    grouped splits, while variants provide within-family diversity for training.
+    """
+    base = topology_scenario(family)
+    if variant < 0:
+        raise ValueError("variant must be non-negative")
+    if variant == 0:
+        return base
+    anchor = base.routes[0]
+    relay, asset = f"{family}-relay-{variant}", f"{family}-asset-{variant}"
+    nodes = base.nodes + (TopologyNode(relay, "service", 2 + variant % 3),
+                          TopologyNode(asset, "resource", 3 + variant % 3))
+    route = AttackRoute(f"{family}-variant-route-{variant}",
+                        (anchor.nodes[0], relay, asset),
+                        f"variant-user-{variant}", requires_privilege=bool(variant % 2),
+                        sensitive=True, initial_access=variant % 3 == 0,
+                        vulnerability_precondition="observed-service-exposure")
+    workflows = base.workflows + (BusinessWorkflow(f"{family}-variant-workflow-{variant}",
+                        (anchor.nodes[0], relay, asset), critical=bool(variant % 2)),)
+    return _scenario(f"{family}-v{variant}", nodes, base.routes + (route,), workflows)
+
+
 TOPOLOGY_FAMILIES = ("small-office", "segmented-enterprise", "multi-department", "privileged-administration", "critical-service", "redundant-services")
 
 
