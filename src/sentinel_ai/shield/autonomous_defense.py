@@ -180,8 +180,9 @@ class DefenseCoordinator:
         if Status(r["status"])!=Status.RECOVERY_PENDING: raise ValueError("recovery is not pending")
         if actor.role not in {"analyst","human_authorizer"}: raise PermissionError("recovery review required")
         # Rollback can reopen access; only allow when visible activity is absent and no severe outcome.
-        ex=r["execution"]; unsafe=ex["post"]["observed_malicious_activity"] or ex["actual"]["severe_outcome_gt"]
-        if unsafe:return self.store.transition(pid,Status.ESCALATED,actor.actor_id,"unsafe rollback blocked")
+        ex=r["execution"]; unsafe=(not ex.get("contained",False) or ex["post"]["observed_malicious_activity"]
+            or ex["actual"]["severe_outcome_gt"] or ex["actual"].get("incident_unresolved",True))
+        if unsafe:return self.store.transition(pid,Status.ESCALATED,actor.actor_id,"unsafe rollback blocked: containment is not verified or residual risk remains")
         self.store.transition(pid,Status.RECOVERING,actor.actor_id,"approved safe recovery")
         env=self.environments[p.incident_id]; result=self.executor.execute(env,Proposal(p.incident_id,"ROLLBACK",p.targets,p.state_version,"recovery",{},0),_Permit())
         return self.store.transition(pid,Status.RECOVERED,actor.actor_id,"workflow restoration verified",{"active":False,"recovery":result})

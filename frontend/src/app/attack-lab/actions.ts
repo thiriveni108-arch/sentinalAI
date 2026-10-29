@@ -48,6 +48,18 @@ export async function planIncidentShield(formData: FormData) {
   }
 }
 
+export async function evaluateLinkedShield(formData: FormData) {
+  const incidentId=value(formData,"incidentId"); const topology=value(formData,"topology")||"small-office";
+  if(!incidentId) redirect("/threat-investigation?error=incident_required");
+  try {
+    await getSentinelDataSource().createLinkedShieldSession(incidentId,topology);
+    redirect(`/shield?session=${encodeURIComponent(incidentId)}`);
+  } catch(error) {
+    if(error instanceof SentinelApiError) redirect(`/threat-investigation?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);
+    throw error;
+  }
+}
+
 export async function planAdaptiveShield(formData: FormData) {
   const incidentId = value(formData, "incidentId");
   const familyId = value(formData, "familyId") || "file-collection";

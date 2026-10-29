@@ -206,6 +206,7 @@ export class HttpDataSource implements SentinelDataSource {
   async getIncident(incidentId: string) { try { return await this.get<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}`); } catch (error) { if (error instanceof SentinelApiError && error.status === 404) return null; throw error; } }
   createIncident(input: { user: string; date: string; split: string; scenario: string }) { return this.post<CertIncident>("/api/incidents", input); }
   planIncidentResponse(incidentId: string) { return this.post<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}/shield`, {}); }
+  createLinkedShieldSession(incidentId: string, topology: string) { return this.post<{incident_id:string;session_id:string}>(`/api/incidents/${encodeURIComponent(incidentId)}/shield/session`, { topology, seed: 96001 }); }
   planAdaptiveResponse(incidentId: string, familyId: string) { return this.post<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}/shield-act/plan`, { familyId }); }
   executeAdaptiveAction(incidentId: string, actionId: string) { return this.post<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}/shield-act/actions/${encodeURIComponent(actionId)}/execute`, {}); }
   rollbackAdaptiveAction(incidentId: string, actionId: string) { return this.post<CertIncident>(`/api/incidents/${encodeURIComponent(incidentId)}/shield-act/actions/${encodeURIComponent(actionId)}/rollback`, {}); }

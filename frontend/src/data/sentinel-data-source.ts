@@ -80,6 +80,7 @@ export interface SentinelDataSource {
   getIncident(incidentId: string): Promise<CertIncident | null>;
   createIncident(input: { user: string; date: string; split: string; scenario: string }): Promise<CertIncident>;
   planIncidentResponse(incidentId: string): Promise<CertIncident>;
+  createLinkedShieldSession(incidentId: string, topology: string): Promise<{incident_id:string;session_id:string}>;
   planAdaptiveResponse(incidentId: string, familyId: string): Promise<CertIncident>;
   executeAdaptiveAction(incidentId: string, actionId: string): Promise<CertIncident>;
   rollbackAdaptiveAction(incidentId: string, actionId: string): Promise<CertIncident>;

@@ -23,6 +23,7 @@ from sentinel_ai.shield.act import AdaptiveScenarioEngine, ConsequenceModel, con
 
 class IncidentService:
     SCENARIO = "suspicious-file-collection"
+    LINKAGE_VERSION = "sentinel-canonical-incident-link-v1"
 
     def __init__(self, database_path: str | Path | None = None, cert: CertResearchService | None = None,
                  shield: ShieldService | None = None) -> None:
@@ -85,7 +86,26 @@ class IncidentService:
                                 "label": "Past-only personal and population comparison; not a verified peer group"},
             "detection": {"original": before, "injected": after,
                           "findingCreated": bool(after["assessment"]["prediction"]),
-                          "outcome": "DETECTED" if after["assessment"]["prediction"] else "MISSED_BY_SELECTED_POLICY"},
+                           "outcome": "DETECTED" if after["assessment"]["prediction"] else "MISSED_BY_SELECTED_POLICY"},
+            "linkage": {
+                "version": self.LINKAGE_VERSION, "lifecycleVersion": 1,
+                "certIncidentId": incident_id, "certUserId": user, "employeeDay": date,
+                "baselineRecord": {"split": split, "user": user, "date": date},
+                "injectedScenario": {"id": scenario, "reference": f"{incident_id}:injection"},
+                "detectorDecision": {"policy": after["assessment"]["policy"],
+                    "outcome": "DETECTED" if after["assessment"]["prediction"] else "MISSED_BY_SELECTED_POLICY",
+                    "findingCreated": bool(after["assessment"]["prediction"])},
+                "immutableEvidenceRefs": [f"{incident_id}:original", f"{incident_id}:injected", f"{incident_id}:detectors"],
+                "shieldSessionId": None, "simulation": None, "belief": None,
+                "proposalIds": [], "authorizationExecutionIds": [], "verification": None,
+                "recovery": None, "experienceFingerprint": None,
+                "versions": {"dataset": "CERT-r4.2-prepared", "detectionPolicy": after["assessment"]["policy"],
+                    "linkage": self.LINKAGE_VERSION},
+                "initiatedBy": "AUTONOMOUS_DETECTION" if after["assessment"]["prediction"] else "ANALYST_RESEARCH_REPLAY",
+                "provenance": {"certEvidence": "authoritative", "simulationConsequences": "shield-authoritative",
+                    "execution": "phase8-authoritative", "experience": "phase10-authoritative"},
+                "createdAt": now, "updatedAt": now,
+            },
             "shield": {"status": "NOT_RUN", "eligible": True,
                        "boundary": "Incident-associated hypothetical response graph; not discovered CERT access data."},
             "history": [
@@ -95,6 +115,42 @@ class IncidentService:
         }
         self._save(document)
         return document
+
+    def attach_shield_session(self, incident_id: str, session: dict[str, Any]) -> dict[str, Any]:
+        """Durably bind a CERT incident to one explicitly hypothetical SHIELD session."""
+        document = self.get(incident_id)
+        linkage = document["linkage"]
+        existing = linkage.get("shieldSessionId")
+        if existing and existing != session["session_id"]:
+            raise ValueError("CERT incident is already linked to a different SHIELD session")
+        now = datetime.now(timezone.utc).isoformat()
+        linkage.update({"shieldSessionId": session["session_id"], "simulation": {
+            "topology": session["topology"], "seed": session["seed"], "hypothetical": True,
+            "assumptions": session["adapter"]["assumptions"], "adapterVersion": session["adapter"]["version"]},
+            "belief": session["belief"], "updatedAt": now})
+        document["shield"] = {"status": "SESSION_LINKED", "eligible": True,
+            "sessionId": session["session_id"], "boundary": session["context"]["network_context"]}
+        document["status"] = "SHIELD_INVESTIGATING"; document["updatedAt"] = now
+        document["history"].append({"at": now, "stage": "SHIELD_HANDOFF",
+            "detail": f"Linked hypothetical {session['topology']} response session; initiation {linkage['initiatedBy']}."})
+        self._save(document)
+        return document
+
+    def sync_shield_lifecycle(self, incident_id: str, session: dict[str, Any]) -> None:
+        """Mirror stable references/status only; Phase 8/10 records remain authoritative."""
+        document=self.get(incident_id); linkage=document["linkage"]; proposal=session.get("proposal") or {}
+        proposal_id=proposal.get("proposal_id")
+        if proposal_id and proposal_id not in linkage["proposalIds"]: linkage["proposalIds"].append(proposal_id)
+        if proposal_id and proposal.get("execution") and proposal_id not in linkage["authorizationExecutionIds"]:
+            linkage["authorizationExecutionIds"].append(proposal_id)
+        linkage["belief"]=session.get("belief"); linkage["verification"]={"status":session.get("lifecycle_status"),
+            "proposalId":proposal_id,"source":"phase8"}
+        if proposal.get("recovery"): linkage["recovery"]={"status":session.get("lifecycle_status"),"proposalId":proposal_id}
+        experience=session.get("experience_ingestion") or {}
+        if experience.get("fingerprint"): linkage["experienceFingerprint"]=experience["fingerprint"]
+        linkage["lifecycleVersion"]+=1; linkage["updatedAt"]=datetime.now(timezone.utc).isoformat()
+        document["status"]=f"SHIELD_{session.get('lifecycle_status','UNKNOWN')}"; document["updatedAt"]=linkage["updatedAt"]
+        self._save(document)
 
     def plan_response(self, incident_id: str) -> dict[str, Any]:
         document = self.get(incident_id)

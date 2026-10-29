@@ -42,7 +42,7 @@ def graph_action_specs() -> tuple[ActionSpec, ...]:
 
 def proposal_from_graph_plan(incident_id: str, environment, plan: AdaptivePlan, prediction, diagnostics: Mapping[str, object], state_version: int = 0) -> Proposal:
     topology = environment.topology
-    target = environment.state.current_route_gt if topology else "simulated-target"
+    target = defender_visible_target(topology, plan.action) if topology else None
     # Scope is intentionally conservative: an opaque/unsupported graph cannot be auto-authorized.
     criticality = max((node.criticality for node in topology.nodes), default=1) if topology else 5
     graph_supported = bool(topology and not diagnostics.get("out_of_distribution", True))
@@ -54,3 +54,19 @@ def proposal_from_graph_plan(incident_id: str, environment, plan: AdaptivePlan, 
                     blast_radius=1 if plan.action in {"REQUIRE_FRESH_MFA", "REVOKE_SESSION", "DISABLE_BULK_EXPORT", "NO_OP"} else 2,
                     reversible=plan.action not in {"DISABLE_ACCOUNT", "ISOLATE_DEVICE"},
                     recovery_plan=plan.action != "NO_OP", incident_severity=4 if criticality >= 4 else 2)
+
+
+def defender_visible_target(topology, action: str) -> str | None:
+    """Choose only from declared graph entities; never inspect attacker route/capability state."""
+    if topology is None:
+        return None
+    identity = next((route.required_identity for route in topology.routes if route.required_identity), None)
+    if action in {"REQUIRE_FRESH_MFA", "REVOKE_SESSION", "DISABLE_ACCOUNT"}:
+        return identity
+    kinds = {
+        "ISOLATE_DEVICE": {"host"}, "REMOVE_PRIVILEGE": {"identity"},
+        "RESTRICT_RESOURCE": {"resource", "service"}, "DISABLE_BULK_EXPORT": {"resource", "service"},
+        "SEGMENT_SERVICE": {"service"},
+    }.get(action, set())
+    candidates = [node for node in topology.nodes if node.kind in kinds]
+    return max(candidates, key=lambda node: node.criticality).identifier if candidates else None

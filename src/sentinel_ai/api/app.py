@@ -191,6 +191,17 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         try: return incidents.plan_response(incident_id)
         except KeyError as error: raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
 
+    @app.post("/api/incidents/{incident_id}/shield/session", response_model=dict[str, object], status_code=201)
+    def create_linked_shield_session(incident_id: str, payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
+        """Versioned CERT-to-SHIELD handoff; topology remains an explicit simulation assumption."""
+        try:
+            document=incidents.get(incident_id)
+            session=unified_shield.create_linked(document,str(payload.get("topology","small-office")),int(payload.get("seed",96001)))
+            incidents.attach_shield_session(incident_id,session)
+            return session
+        except KeyError as error: raise HTTPException(404,{"code":"incident_not_found","message":str(error).strip("'")}) from error
+        except ValueError as error: raise HTTPException(409,{"code":"shield_link_conflict","message":str(error)}) from error
+
     @app.post("/api/incidents/{incident_id}/shield-act/plan", response_model=dict[str, object])
     def plan_adaptive_response(incident_id: str, payload: Annotated[dict[str, object], Body()] = {}) -> dict[str, object]:
         try:
@@ -340,23 +351,35 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
 
     @app.post("/api/shield/sessions/{incident_id}/submit", response_model=dict[str, object])
     def submit_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
-        try:return unified_shield.submit(incident_id,int(payload["version"]))
+        try:
+            result=unified_shield.submit(incident_id,int(payload["version"]))
+            if result.get("origin")=="cert-linked-incident": incidents.sync_shield_lifecycle(incident_id,result)
+            return result
         except (KeyError,RuntimeError) as error: raise HTTPException(409,{"code":"shield_submit_conflict","message":str(error)}) from error
 
     @app.post("/api/shield/sessions/{incident_id}/approval", response_model=dict[str, object])
     def approve_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
-        try:return unified_shield.approve(incident_id,str(payload["identity"]),str(payload["decision"]),int(payload["version"]))
+        try:
+            result=unified_shield.approve(incident_id,str(payload["identity"]),str(payload["decision"]),int(payload["version"]))
+            if result.get("origin")=="cert-linked-incident": incidents.sync_shield_lifecycle(incident_id,result)
+            return result
         except PermissionError as error: raise HTTPException(403,{"code":"simulated_identity_denied","message":str(error)}) from error
         except (KeyError,RuntimeError,ValueError) as error: raise HTTPException(409,{"code":"shield_approval_conflict","message":str(error)}) from error
 
     @app.post("/api/shield/sessions/{incident_id}/execute", response_model=dict[str, object])
     def execute_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
-        try:return unified_shield.execute(incident_id,int(payload["version"]))
+        try:
+            result=unified_shield.execute(incident_id,int(payload["version"]))
+            if result.get("origin")=="cert-linked-incident": incidents.sync_shield_lifecycle(incident_id,result)
+            return result
         except (KeyError,RuntimeError,ValueError,PermissionError) as error: raise HTTPException(409,{"code":"shield_execution_conflict","message":str(error)}) from error
 
     @app.post("/api/shield/sessions/{incident_id}/recovery", response_model=dict[str, object])
     def recover_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
-        try:return unified_shield.recover(incident_id,str(payload["identity"]),int(payload["version"]))
+        try:
+            result=unified_shield.recover(incident_id,str(payload["identity"]),int(payload["version"]))
+            if result.get("origin")=="cert-linked-incident": incidents.sync_shield_lifecycle(incident_id,result)
+            return result
         except PermissionError as error: raise HTTPException(403,{"code":"shield_recovery_denied","message":str(error)}) from error
         except (KeyError,RuntimeError,ValueError) as error: raise HTTPException(409,{"code":"shield_recovery_conflict","message":str(error)}) from error
 

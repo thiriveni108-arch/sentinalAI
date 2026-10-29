@@ -288,6 +288,7 @@ export const fixtureDataSource: SentinelDataSource = {
   getIncident: async () => null,
   createIncident: async () => { throw new Error("Live API required"); },
   planIncidentResponse: async () => { throw new Error("Live API required"); },
+  createLinkedShieldSession: async () => { throw new Error("Live API required"); },
   planAdaptiveResponse: async () => { throw new Error("Live API required"); },
   executeAdaptiveAction: async () => { throw new Error("Live API required"); },
   rollbackAdaptiveAction: async () => { throw new Error("Live API required"); },
