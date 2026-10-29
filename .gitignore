@@ -50,3 +50,6 @@ artifacts/reports/*
 
 # Temporary test directories
 .test-tmp*
+
+# Local development service output
+.*-local*.log

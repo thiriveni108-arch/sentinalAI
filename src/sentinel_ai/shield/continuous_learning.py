@@ -64,7 +64,10 @@ class ExperienceStore:
     def ingest(self, episode:Mapping[str,Any])->ExperienceValidation:
         result=self.validate(episode); payload=dict(episode); payload["validation"]={"eligible":result.eligible,"reasons":result.reasons}; payload.setdefault("provenance","simulated")
         with self._conn() as c:
-            c.execute("INSERT OR IGNORE INTO phase10_experiences VALUES(?,?,?,?,?,?)",(result.fingerprint,str(episode.get("episode_id")),int(result.eligible),json.dumps(result.reasons),json.dumps(payload,default=str),_now()))
+            c.execute("""INSERT INTO phase10_experiences VALUES(?,?,?,?,?,?)
+                ON CONFLICT(fingerprint) DO UPDATE SET eligibility=excluded.eligibility,
+                reasons=excluded.reasons,payload=excluded.payload""",
+                (result.fingerprint,str(episode.get("episode_id")),int(result.eligible),json.dumps(result.reasons),json.dumps(payload,default=str),_now()))
         return result
     def eligible(self):
         with self._conn() as c: rows=c.execute("SELECT payload FROM phase10_experiences WHERE eligibility=1").fetchall()

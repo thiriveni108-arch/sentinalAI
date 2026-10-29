@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { FlaskConical, LayoutDashboard, SearchCheck, ShieldCheck, Telescope } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { plannedModules, type PlannedModuleSlug } from "@/config/navigation";
@@ -19,13 +19,14 @@ const plannedIcons: Record<PlannedModuleSlug, LucideIcon> = {
 
 export function SidebarNav({ compact = false }: { compact?: boolean }) {
   const pathname = usePathname();
+  const session = useSearchParams().get("session");
   return (
     <nav aria-label={compact ? "Mobile navigation" : "Primary navigation"} className={compact ? "flex h-12 items-stretch overflow-x-auto px-3" : "space-y-1.5 px-3"}>
       {!compact && <div className="px-3 pb-2 tech-label">Workspace</div>}
       {primary.map(({ href, label, icon: Icon }) => {
         const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
-          <Link key={href} href={href} aria-current={active ? "page" : undefined} className={cn(
+          <Link key={href} href={session ? `${href}?session=${encodeURIComponent(session)}` : href} aria-current={active ? "page" : undefined} className={cn(
             "flex items-center gap-3 border-transparent text-[12px] font-medium transition-all hover:translate-x-0.5 focus-visible:z-10",
             compact ? "border-b-2 px-3" : "h-10 rounded-lg border-l-2 px-3",
             active ? "border-[var(--accent)] bg-[var(--surface-selected)] font-semibold text-foreground" : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-foreground",

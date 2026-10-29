@@ -37,6 +37,8 @@ const scenarioLinks = [
 
 export default async function ShieldPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
+  const sessionId = Array.isArray(params.session) ? params.session[0] : params.session;
+  if (sessionId) return <div className="mx-auto max-w-[1500px]"><UnifiedShieldCommand /></div>;
   const incidentId = Array.isArray(params.incident) ? params.incident[0] : params.incident;
   if (incidentId) {
     const incident = await getSentinelDataSource().getIncident(incidentId);

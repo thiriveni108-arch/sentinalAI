@@ -13,6 +13,7 @@ from typing import Annotated, Literal
 from fastapi import Body, Depends, FastAPI, HTTPException, Query, Request, Header
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from sentinel_ai import config
 from sentinel_ai.api.schemas import (
@@ -147,6 +148,12 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         yield
 
     app = FastAPI(title="SentinelAI API", version="0.1.0", lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
+        allow_methods=["GET", "POST"],
+        allow_headers=["content-type", "x-model-governance-token"],
+    )
 
     from sentinel_ai.shield import ShieldService
     from sentinel_ai.shield.autonomous_defense import (Actor, DefenseCoordinator, DefenseStore,
@@ -346,6 +353,17 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     def execute_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
         try:return unified_shield.execute(incident_id,int(payload["version"]))
         except (KeyError,RuntimeError,ValueError,PermissionError) as error: raise HTTPException(409,{"code":"shield_execution_conflict","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/recovery", response_model=dict[str, object])
+    def recover_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.recover(incident_id,str(payload["identity"]),int(payload["version"]))
+        except PermissionError as error: raise HTTPException(403,{"code":"shield_recovery_denied","message":str(error)}) from error
+        except (KeyError,RuntimeError,ValueError) as error: raise HTTPException(409,{"code":"shield_recovery_conflict","message":str(error)}) from error
+
+    @app.post("/api/shield/sessions/{incident_id}/replan", response_model=dict[str, object])
+    def replan_shield_session(incident_id:str,payload:Annotated[dict[str,object],Body()]) -> dict[str,object]:
+        try:return unified_shield.replan(incident_id,int(payload["version"]))
+        except (KeyError,RuntimeError,ValueError) as error: raise HTTPException(409,{"code":"shield_replan_conflict","message":str(error)}) from error
 
     def require_model_governance(token: Annotated[str | None, Header(alias="X-Model-Governance-Token")] = None) -> str:
         expected=os.environ.get("SENTINEL_MODEL_GOVERNANCE_TOKEN")

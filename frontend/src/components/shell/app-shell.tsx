@@ -4,6 +4,7 @@ import { Bell, Orbit, Search, ShieldCheck } from "lucide-react";
 import type { SystemStatusSnapshot } from "@/domain/sentinel";
 import { SystemStatus } from "@/components/system/system-status";
 import { SidebarNav } from "./sidebar-nav";
+import { WorkspaceIncidentBridge } from "@/components/incident/incident-views";
 
 export function AppShell({ children, system }: { children: React.ReactNode; system: SystemStatusSnapshot }) {
   return (
@@ -34,7 +35,7 @@ export function AppShell({ children, system }: { children: React.ReactNode; syst
           </div>
           <div className="border-t border-border lg:hidden"><SidebarNav compact /></div>
         </header>
-        <main id="main-content" tabIndex={-1} className="px-4 py-6 md:px-7 md:py-7 xl:px-9 xl:py-8">{children}</main>
+        <main id="main-content" tabIndex={-1} className="px-4 py-6 md:px-7 md:py-7 xl:px-9 xl:py-8"><WorkspaceIncidentBridge/>{children}</main>
       </div>
     </div></MotionSurface>
   );
