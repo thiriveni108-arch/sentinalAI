@@ -1,0 +1,125 @@
+{
+  "model_version": "shield-act-consequence-v1",
+  "dataset_version": "shield-act-counterfactual-v1",
+  "seed": 73,
+  "features": [
+    "action_cost",
+    "coverage_ratio",
+    "max_asset_criticality",
+    "dependency_count"
+  ],
+  "task": "Binary modeled operational disruption category; raw circuit score is not probability.",
+  "training_families": [
+    "file-collection",
+    "credential-compromise"
+  ],
+  "held_out_family": "lateral-access",
+  "validated_families": [
+    "file-collection",
+    "credential-compromise",
+    "lateral-access"
+  ],
+  "rows": {
+    "total": 360,
+    "train": 192,
+    "validation": 48,
+    "held_out_test": 120
+  },
+  "circuit": {
+    "backend": "PennyLane default.qubit exact",
+    "qubits": 4,
+    "layers": 2,
+    "trainable_parameters": 24
+  },
+  "vqc": {
+    "balanced_accuracy": 0.75,
+    "f1": 0.8,
+    "confusion_matrix": [
+      [
+        30,
+        30
+      ],
+      [
+        0,
+        60
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1-score": 0.6666666666666666,
+        "support": 60.0
+      },
+      "1": {
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1-score": 0.8,
+        "support": 60.0
+      },
+      "accuracy": 0.75,
+      "macro avg": {
+        "precision": 0.8333333333333333,
+        "recall": 0.75,
+        "f1-score": 0.7333333333333334,
+        "support": 120.0
+      },
+      "weighted avg": {
+        "precision": 0.8333333333333334,
+        "recall": 0.75,
+        "f1-score": 0.7333333333333333,
+        "support": 120.0
+      }
+    },
+    "training_seconds": 42.32341239997186,
+    "held_out_inference_seconds": 0.7307622999651358,
+    "threshold": 0.04257161221445788
+  },
+  "classical": {
+    "model": "LogisticRegression",
+    "balanced_accuracy": 0.75,
+    "f1": 0.6666666666666666,
+    "confusion_matrix": [
+      [
+        60,
+        0
+      ],
+      [
+        30,
+        30
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.6666666666666666,
+        "recall": 1.0,
+        "f1-score": 0.8,
+        "support": 60.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1-score": 0.6666666666666666,
+        "support": 60.0
+      },
+      "accuracy": 0.75,
+      "macro avg": {
+        "precision": 0.8333333333333333,
+        "recall": 0.75,
+        "f1-score": 0.7333333333333334,
+        "support": 120.0
+      },
+      "weighted avg": {
+        "precision": 0.8333333333333334,
+        "recall": 0.75,
+        "f1-score": 0.7333333333333333,
+        "support": 120.0
+      }
+    }
+  },
+  "limitations": [
+    "Synthetic modeled consequences only; not real operational outcomes.",
+    "Held-out family evaluation is small and does not establish quantum advantage.",
+    "Exact simulation and policy constraints remain authoritative."
+  ]
+}

@@ -1,0 +1,47 @@
+# Git & IDE
+.git
+.gitignore
+.github
+.idea
+.vscode
+*.swp
+*.swo
+
+# Virtual environments
+.venv
+venv
+env
+ENV
+
+# Frontend (deployed separately to Vercel)
+frontend/
+
+# Python bytecode and caches
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.pytest-*
+.test-tmp-*
+
+# Build & egg artifacts
+*.egg-info
+dist
+build
+
+# Logs and temp files
+*.log
+.api-local.*
+.backend-local.*
+.frontend-local.*
+.ui-local.*
+
+# Notebooks
+notebooks/
+*.ipynb
+
+# OS files
+.DS_Store
+Thumbs.db
+

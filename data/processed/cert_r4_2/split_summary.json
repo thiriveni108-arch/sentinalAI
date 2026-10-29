@@ -1,0 +1,65 @@
+{
+  "dataset_split_strategy": "Strict Chronological Partitioning (No temporal leakage)",
+  "temporal_ranges": {
+    "train": {
+      "start_date": "2010-01-02",
+      "end_date": "2010-11-30",
+      "total_days_span": 333,
+      "total_user_days": 227954,
+      "positive_count": 660,
+      "negative_count": 227294,
+      "positive_percentage": 0.2895320985812927,
+      "scenario_counts": {
+        "2": 580,
+        "1": 64,
+        "3": 16
+      }
+    },
+    "validation": {
+      "start_date": "2010-12-01",
+      "end_date": "2011-02-28",
+      "total_days_span": 90,
+      "total_user_days": 55302,
+      "positive_count": 233,
+      "negative_count": 55069,
+      "positive_percentage": 0.4213229177968247,
+      "scenario_counts": {
+        "2": 212,
+        "1": 19,
+        "3": 2
+      }
+    },
+    "test": {
+      "start_date": "2011-03-01",
+      "end_date": "2011-05-17",
+      "total_days_span": 78,
+      "total_user_days": 47196,
+      "positive_count": 73,
+      "negative_count": 47123,
+      "positive_percentage": 0.15467412492584118,
+      "scenario_counts": {
+        "2": 69,
+        "1": 2,
+        "3": 2
+      }
+    }
+  },
+  "overall": {
+    "total_user_days": 330452,
+    "total_positive_user_days": 966,
+    "total_negative_user_days": 329486,
+    "overall_positive_rate": 0.29232687349448633,
+    "scenario_counts": {
+      "2": 861,
+      "1": 85,
+      "3": 20
+    }
+  },
+  "temporal_leakage_checks": {
+    "train_max_date_less_than_val_min_date": true,
+    "val_max_date_less_than_test_min_date": true,
+    "scaler_fitted_on_train_only": true,
+    "pca_fitted_on_train_only": true,
+    "class_imbalance_preserved_in_val_and_test": true
+  }
+}

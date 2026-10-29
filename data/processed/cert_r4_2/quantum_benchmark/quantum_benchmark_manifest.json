@@ -1,0 +1,92 @@
+{
+  "benchmark_name": "CERT r4.2 SentinelAI-Q Shared Quantum ML Benchmark",
+  "purpose": "Identical, reproducible evaluation for PennyLane QSVC and PennyLane VQC insider threat detection",
+  "random_seed": 42,
+  "source_preprocessed_files": {
+    "train": "data\\processed\\cert_r4_2\\train.csv",
+    "validation": "data\\processed\\cert_r4_2\\validation.csv",
+    "test": "data\\processed\\cert_r4_2\\test.csv"
+  },
+  "target_quantum_features": [
+    "pca_1",
+    "pca_2",
+    "pca_3",
+    "pca_4"
+  ],
+  "classical_baseline_preservation_note": "The full original preprocessed partitions (train.csv: 227,954 rows; validation.csv: 55,302 rows; test.csv: 47,196 rows) remain untouched at data/processed/cert_r4_2/ for classical baseline evaluation (XGBoost, Random Forest, Isolation Forest). The quantum benchmark cohorts represent bounded, balanced subsets designed for computationally viable statevector simulation.",
+  "class_balancing_documentation": {
+    "is_balanced_or_enriched": true,
+    "train_ratio": "1:1 (125 Malicious, 125 Benign)",
+    "val_ratio": "1:1 (50 Malicious, 50 Benign)",
+    "test_ratio": "1:1 (50 Malicious, 50 Benign)",
+    "rationale": "Quantum statevector simulation of kernel matrices in QSVC scales O(N^2) in samples, and VQC parameter optimization scales linearly in batch evaluations. Simulating 330k samples is computationally intractable on quantum simulators. Class-balanced cohorts ensure meaningful decision boundary learning and standard quantum metric comparisons (Balanced Accuracy, AUC-ROC, F1-score) without minority class vanishing.",
+    "distinction_from_natural_prevalence": "In natural-prevalence evaluation, positive incidence is 0.2923% (~1 positive per 341 benign days). Metrics measured on these quantum cohorts reflect discriminative capability under balanced/enriched settings. Deployment metrics under natural prevalence can be projected using Bayes theorem or evaluated via classical baselines on the full preserved validation/test partitions."
+  },
+  "cohort_statistics": {
+    "training_cohort": {
+      "total_samples": 250,
+      "positive_samples": 125,
+      "negative_samples": 125,
+      "positive_rate": 0.5,
+      "scenario_breakdown": {
+        "2": 100,
+        "1": 15,
+        "3": 10
+      },
+      "date_range": [
+        "2010-01-06",
+        "2010-11-30"
+      ],
+      "sha256": "506142fbfd76870c11378a19581a4ac6fd5162e57b8e23a99daedb07adde072a"
+    },
+    "validation_cohort": {
+      "total_samples": 100,
+      "positive_samples": 50,
+      "negative_samples": 50,
+      "positive_rate": 0.5,
+      "scenario_breakdown": {
+        "2": 40,
+        "1": 8,
+        "3": 2
+      },
+      "date_range": [
+        "2010-12-01",
+        "2011-02-28"
+      ],
+      "sha256": "60115f48e39df387e2c6fd0c3032d5e16c82841c5686c998d1e7f6b5336175d6"
+    },
+    "test_cohort": {
+      "total_samples": 100,
+      "positive_samples": 50,
+      "negative_samples": 50,
+      "positive_rate": 0.5,
+      "scenario_breakdown": {
+        "2": 46,
+        "1": 2,
+        "3": 2
+      },
+      "date_range": [
+        "2011-03-01",
+        "2011-05-11"
+      ],
+      "sha256": "722ec7b0947e31f6ae3a40635958b03c932e00e13f34051d150a783c14a63fe2"
+    }
+  },
+  "file_paths": {
+    "shared": {
+      "quantum_train.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\quantum_train.csv",
+      "quantum_val.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\quantum_val.csv",
+      "quantum_test.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\quantum_test.csv"
+    },
+    "qsvc": {
+      "train.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\qsvc\\train.csv",
+      "val.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\qsvc\\val.csv",
+      "test.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\qsvc\\test.csv"
+    },
+    "vqc": {
+      "train.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\vqc\\train.csv",
+      "val.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\vqc\\val.csv",
+      "test.csv": "data\\processed\\cert_r4_2\\quantum_benchmark\\vqc\\test.csv"
+    }
+  }
+}
