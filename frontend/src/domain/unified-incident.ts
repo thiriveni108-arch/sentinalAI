@@ -18,10 +18,17 @@ export interface UnifiedShieldSession {
   belief: Record<string, number>; proposal: Record<string, unknown> | null; timeline: ShieldTimelineEvent[];
   pending_authorization: { tier?: string; reasons?: string[] } | null; available_actions: string[];
   experience_ingestion: ExperienceIngestionStatus;
+  context: {
+    identity: { established: boolean; display_label: string; identifier: string | null; role: string | null; department: string | null };
+    trigger: { event: string; summary: string; source_event_ids: string[] };
+    evidence_summary: string; affected_resources: string[]; detection_outcome: string;
+    network_context: string; approval_scope: "simulation-only";
+  };
   provenance: { evidence: string; prediction: string; execution: string; learning: string };
 }
 
 export interface ShieldPlan {
   version: number; plan: { action: string; policy: string; solver: string; objective: number };
   prediction: Record<string, number>; uncertainty: number; diagnostic: { reason: string; operationally_suitable: boolean };
+  alternatives: Array<{action:string;policy:string;objective:number;feasible:boolean;reason:string;reversible:boolean;tier:string;prediction:Record<string,number>;uncertainty:number}>;
 }

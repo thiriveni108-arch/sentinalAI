@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { FlaskConical, LayoutDashboard, SearchCheck, ShieldCheck, Telescope } from "lucide-react";
+import { FlaskConical, LayoutDashboard, SearchCheck, ShieldCheck, Telescope, Workflow } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { plannedModules, type PlannedModuleSlug } from "@/config/navigation";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,8 @@ const primary = [
   { href: "/", label: "Command Center", icon: LayoutDashboard },
   { href: "/threat-investigation", label: "Threat Investigation", icon: SearchCheck },
   { href: "/attack-lab", label: "Adversary Lab", icon: FlaskConical },
-  { href: "/shield", label: "SHIELD Defense", icon: ShieldCheck },
+  { href: "/shield", label: "SHIELD Intelligence", icon: ShieldCheck },
+  { href: "/response-automation", label: "Response Automation", icon: Workflow },
   { href: "/simulation", label: "Model Observatory", icon: Telescope },
 ];
 const plannedIcons: Record<PlannedModuleSlug, LucideIcon> = {

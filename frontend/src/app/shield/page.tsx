@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, Atom, CheckCircle2, Route, ShieldCheck } from "lucide-react";
 import { getSentinelDataSource } from "@/data/data-source";
 import { executeAdaptiveShield, planAdaptiveShield, rollbackAdaptiveShield } from "@/app/attack-lab/actions";
-import { UnifiedShieldCommand } from "@/components/shield/unified-shield-command";
+import { ShieldIntelligence } from "@/components/shield/shield-intelligence";
 
 export const metadata: Metadata = { title: "SHIELD Decision Lab" };
 type Params = Promise<Record<string, string | string[] | undefined>>;
@@ -38,19 +38,20 @@ const scenarioLinks = [
 export default async function ShieldPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
   const sessionId = Array.isArray(params.session) ? params.session[0] : params.session;
-  if (sessionId) return <div className="mx-auto max-w-[1500px]"><UnifiedShieldCommand /></div>;
+  if (sessionId) return <ShieldIntelligence />;
   const incidentId = Array.isArray(params.incident) ? params.incident[0] : params.incident;
   if (incidentId) {
     const incident = await getSentinelDataSource().getIncident(incidentId);
     if (incident) return <IncidentShield incident={incident} />;
   }
+  return <ShieldIntelligence />;
+  /* Legacy scenario dashboard intentionally retired: unified planning is rendered above.
   const raw = params.scenario;
   const id = (Array.isArray(raw) ? raw[0] : raw) ?? "multiple-routes";
   const data = await load(id);
   if (!data) return <section className="p-8 panel"><h1 className="font-bold text-2xl">SHIELD Decision Lab</h1><p className="mt-3 text-[var(--text-muted)] text-sm">Connect the SentinelAI API to compute the advisory containment plan. No fixture results are fabricated.</p></section>;
   const rec = data.recommendation;
   return <div className="space-y-5 mx-auto max-w-[1700px]">
-    <UnifiedShieldCommand />
     <section className="relative bg-white shadow-[0_18px_48px_rgb(30_110_90/0.10)] p-7 border border-[var(--accent)]/30 rounded-[22px] overflow-hidden">
       <div className="flex flex-wrap justify-between items-start gap-5"><div><div className="text-[var(--accent)] tech-label">SentinelAI-Q / advisory simulation</div><h1 className="mt-3 font-bold text-3xl tracking-tight">SHIELD Decision Lab</h1><p className="mt-2 max-w-3xl text-[var(--text-secondary)] text-xs leading-6">Minimum-disruption containment across every enumerated critical attack path, with classical validation and counterfactual verification.</p></div><div className="bg-[#fffaf0] px-4 py-3 border border-[var(--medium)]/30 rounded-xl text-[#8b6210] text-xs">Human approval required · no production actions</div></div>
       <nav className="flex flex-wrap gap-2 mt-6">{scenarioLinks.map(([key, label]) => <Link key={key} href={`/shield?scenario=${key}`} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${key === id ? "border-[var(--accent)] bg-[var(--surface-selected)]" : "border-border"}`}>{label}</Link>)}</nav>
@@ -67,6 +68,7 @@ export default async function ShieldPage({ searchParams }: { searchParams: Param
 
     <section className="p-5 panel"><div className="flex items-center gap-2 text-[var(--quantum)]"><Atom className="size-4" /><h2 className="font-semibold text-sm">Verified quantum optimization</h2></div><div className="gap-3 grid sm:grid-cols-3 lg:grid-cols-8 mt-4"><Metric label="Backend" value={data.quantum.backend ?? "—"} /><Metric label="Qubits" value={String(data.quantum.qubitCount ?? "—")} /><Metric label="Depth" value={String(data.quantum.circuitDepth ?? "—")} /><Metric label="Classical optimum" value={String(data.quantum.classicalOptimum)} /><Metric label="Best measured" value={String(data.quantum.qaoaObjective ?? "fallback")} /><Metric label="Absolute gap" value={String(data.quantum.optimalityGap ?? "—")} /><Metric label="Approx. ratio" value={data.quantum.approximationRatio?.toFixed(3) ?? "—"} /><Metric label="Feasible shots" value={data.quantum.feasibleShotRate === undefined ? "—" : `${(data.quantum.feasibleShotRate * 100).toFixed(1)}%`} /></div><div className="gap-3 grid lg:grid-cols-2 mt-4"><div className="bg-[var(--surface-elevated)] p-3 rounded-lg text-[10px] leading-5"><span className="tech-label">Sampling interpretation</span><p className="mt-1">Most frequent: {data.quantum.mostFrequentBitstring ?? "—"} · lowest-cost feasible: {data.quantum.measuredBitstring ?? "—"}. Candidate selection uses feasible objective, not frequency.</p></div><div className="bg-[var(--surface-elevated)] p-3 rounded-lg text-[10px] leading-5"><span className="tech-label">Independent QUBO audit</span><p className="mt-1">{data.quantum.quboAudit ? `${data.quantum.quboAudit.bitstringsChecked} bitstrings checked · ${data.quantum.quboAudit.energyMismatches} energy mismatches · ${data.quantum.quboAudit.penaltyViolatingEncodings} penalty-violating encodings` : "Audit unavailable"}</p></div></div><p className="mt-4 text-[10px] text-[var(--text-muted)]">{data.quantum.disclosure} Runtime {data.quantum.executionTimeMs} ms. Exact classical containment remains authoritative.</p></section>
   </div>;
+  */
 }
 
 function IncidentShield({ incident }: { incident: import("@/domain/sentinel").CertIncident }) {

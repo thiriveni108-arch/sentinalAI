@@ -33,6 +33,9 @@ def test_unified_session_lifecycle_is_versioned_authorized_and_auditable(client,
     assert created.status_code == 201
     initial = created.json(); incident = initial["incident_id"]
     assert initial["correlation_id"] and initial["available_actions"] == ["plan"]
+    assert initial["context"]["identity"]["established"] is False
+    assert initial["context"]["identity"]["display_label"] == "Identity not established in this simulation"
+    assert initial["context"]["approval_scope"] == "simulation-only"
 
     assert client.post(f"/api/shield/sessions/{incident}/plan", json={"version":99}).status_code == 409
     plan = client.post(f"/api/shield/sessions/{incident}/plan", json={"version":0})

@@ -9,6 +9,10 @@ def test_unified_session_uses_server_derived_plan_and_phase8_authority(tmp_path)
     service=UnifiedSessionService(DefenseCoordinator(DefenseStore(tmp_path/"phase8.db")),ExperienceStore(tmp_path/"memory.db"))
     initial=service.create("credential-compromise","small-office",96001)
     assert initial["origin"]=="simulated-evidence-bridge" and "attacker_progress_gt" not in str(initial)
+    assert initial["context"]["identity"] == {"established":False,"display_label":"Identity not established in this simulation","identifier":None,"role":None,"department":None}
+    assert initial["context"]["approval_scope"] == "simulation-only"
+    assert "not derived from CERT" in initial["context"]["network_context"]
+    assert initial["context"]["trigger"]["source_event_ids"] == [f'{initial["incident_id"]}-simulated']
     plan=service.plan(initial["incident_id"],initial["version"])
     assert plan["plan"]["solver"]=="exact" and plan["diagnostic"]["operationally_suitable"] is False
     submitted=service.submit(initial["incident_id"],initial["version"])

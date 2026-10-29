@@ -11,7 +11,7 @@ from pathlib import Path
 
 import joblib
 
-from .adaptive_planner import make_problem, solve_exact
+from .adaptive_planner import make_problem, score, solve_exact
 from .autonomous_defense import Actor, DefenseCoordinator
 from .beliefs import BayesianAttackerBeliefTracker
 from .consequence_simulator import MultiStepConsequenceEnvironment
@@ -32,7 +32,9 @@ class UnifiedSessionService:
     """Sessions deliberately cannot restore after process restart; callers fail closed."""
     def __init__(self, coordinator:DefenseCoordinator, experience:ExperienceStore, model_path="artifacts/models/shield_graph_consequence_v1.joblib"):
         self.coordinator,self.experience,self.sessions=coordinator,experience,{}
-        self.predictor=joblib.load(model_path) if Path(model_path).exists() else None
+        artifact=Path(model_path)
+        if not artifact.is_absolute() and not artifact.exists(): artifact=Path(__file__).resolve().parents[3]/artifact
+        self.predictor=joblib.load(artifact) if artifact.exists() else None
     def create(self,scenario="credential-compromise",topology="small-office",seed=96001):
         if topology not in TOPOLOGY_FAMILIES: raise ValueError("unsupported topology")
         incident=str(uuid.uuid4()); env=MultiStepConsequenceEnvironment(scenario,int(seed),topology=topology)
@@ -57,15 +59,31 @@ class UnifiedSessionService:
                 "belief":{m.value:v for m,v in b.probabilities.items()},"proposal":record,"timeline":self.coordinator.store.events(s.proposal_id) if s.proposal_id else [],"predictor_available":self.predictor is not None,
                 "pending_authorization":record.get("decision") if record and status in {"PENDING_ANALYST","PENDING_HUMAN"} else None,
                 "available_actions":actions,"experience_ingestion":s.experience_status,
+                "context":{"identity":{"established":False,"display_label":"Identity not established in this simulation","identifier":None,"role":None,"department":None},
+                    "trigger":{"event":"Defender-visible simulated malicious activity","summary":f"The {s.scenario.replace('-', ' ')} exercise produced defender-visible evidence in the {s.topology.replace('-', ' ')} topology.","source_event_ids":[f"{s.incident_id}-simulated"]},
+                    "evidence_summary":f"{o.evidence_count} simulated sensor observation(s); observed compromise {o.observed_compromise:.3f} model units.",
+                    "affected_resources":[node.identifier for node in s.environment.topology.nodes],"detection_outcome":"SIMULATED_ACTIVITY_OBSERVED" if o.observed_malicious_activity else "NO_MALICIOUS_ACTIVITY_OBSERVED",
+                    "network_context":"Hypothetical topology selected for controlled graph simulation; it is not derived from CERT enterprise infrastructure.","approval_scope":"simulation-only"},
                 "provenance":{"evidence":"defender-visible simulated sensor","prediction":"frozen graph consequence model" if self.predictor else "unavailable","execution":"Phase 8 simulator coordinator","learning":"Phase 10 audited experience memory"}}
     def plan(self,incident,expected_version):
         s=self._session(incident)
         if s.version!=expected_version: raise RuntimeError("stale incident version")
         if not self.predictor: raise RuntimeError("graph consequence artifact unavailable")
-        visible=visible_graph_state(s.environment,s.tracker.current.probabilities); plan=solve_exact(make_problem(self.predictor,visible,graph_action_specs(),("observation_only","minimally_disruptive","policy_constrained"),allowed_tier="automatic")); prediction,diagnostic=self.predictor.predict_with_diagnostics(visible,plan.action,plan.policy)
+        visible=visible_graph_state(s.environment,s.tracker.current.probabilities)
+        problem=make_problem(self.predictor,visible,graph_action_specs(),("observation_only","minimally_disruptive","policy_constrained"),allowed_tier="automatic")
+        plan=solve_exact(problem); prediction,diagnostic=self.predictor.predict_with_diagnostics(visible,plan.action,plan.policy)
+        alternatives=[]
+        for action in problem.actions:
+            choices=[score(problem,action,policy) for policy in problem.policies]
+            candidate=min(choices,key=lambda item:item.objective)
+            candidate_prediction=problem.predictions[(candidate.action,candidate.policy)]
+            alternatives.append({"action":candidate.action,"policy":candidate.policy,"objective":candidate.objective,
+                "feasible":candidate.feasible,"reason":candidate.reason,"reversible":action.reversible,"tier":action.tier,
+                "prediction":candidate_prediction.means,"uncertainty":max(candidate_prediction.uncertainty.values(),default=1.0)})
+        alternatives.sort(key=lambda item:(not item["feasible"],item["objective"],item["action"]))
         return {"version":s.version,"visible_features":visible,"plan":asdict(plan),"prediction":prediction.means,
                 "uncertainty":max(prediction.uncertainty.values(),default=1.0),"uncertainty_by_target":prediction.uncertainty,
-                "diagnostic":diagnostic,"alternatives":"existing Phase 7 candidate/action set; exact classical planner"}
+                "diagnostic":diagnostic,"alternatives":alternatives}
     def submit(self,incident,expected_version):
         s=self._session(incident)
         if s.version!=expected_version: raise RuntimeError("stale incident version")
