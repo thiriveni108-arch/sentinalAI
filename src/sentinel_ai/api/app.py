@@ -152,8 +152,23 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         CORSMiddleware,
         allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
         allow_methods=["GET", "POST"],
-        allow_headers=["content-type", "x-model-governance-token"],
+        allow_headers=["content-type", "x-model-governance-token", "x-sentinel-api-key", "authorization"],
     )
+
+    @app.middleware("http")
+    async def demo_access_control(request: Request, call_next):
+        expected_key = os.environ.get("SENTINEL_API_KEY", "").strip()
+        if expected_key and request.method in {"POST", "PUT", "DELETE", "PATCH"}:
+            token = request.headers.get("x-sentinel-api-key")
+            auth_header = request.headers.get("authorization", "")
+            if not token and auth_header.lower().startswith("bearer "):
+                token = auth_header[7:].strip()
+            if not token or token != expected_key:
+                return JSONResponse(
+                    status_code=401,
+                    content={"error": {"code": "unauthorized", "message": "Valid API key required for state-changing operations."}},
+                )
+        return await call_next(request)
 
     from sentinel_ai.shield import ShieldService
     from sentinel_ai.shield.autonomous_defense import (Actor, DefenseCoordinator, DefenseStore,

@@ -19,13 +19,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies first for caching
+# Copy build configuration and full source tree so sentinel_ai installs correctly
 COPY pyproject.toml README.md ./
+COPY src/ ./src/
+
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir .
 
-# Copy application source, configuration, and data/artifact assets
-COPY src/ ./src/
+# Copy application configuration, runtime runner, and model/data assets
 COPY config/ ./config/
 COPY data/ ./data/
 COPY artifacts/ ./artifacts/
@@ -35,10 +36,9 @@ COPY run_server.py ./run_server.py
 # Railway dynamically assigns $PORT at runtime
 EXPOSE 8000
 
-# Healthcheck endpoint
+# Healthcheck endpoint (lightweight check without expensive model initialization)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -f http://127.0.0.1:${PORT:-8000}/api/system/status || exit 1
 
 # Start the FastAPI ASGI server using the Railway-aware runner
 CMD ["python", "run_server.py"]
-
