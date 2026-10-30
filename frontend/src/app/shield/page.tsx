@@ -1,40 +1,12 @@
 
 import type { Metadata } from "next";
-import Link from "next/link";
-import { AlertTriangle, Atom, CheckCircle2, Route, ShieldCheck } from "lucide-react";
+import { Atom } from "lucide-react";
 import { getSentinelDataSource } from "@/data/data-source";
 import { executeAdaptiveShield, planAdaptiveShield, rollbackAdaptiveShield } from "@/app/attack-lab/actions";
 import { ShieldIntelligence } from "@/components/shield/shield-intelligence";
 
 export const metadata: Metadata = { title: "SHIELD Decision Lab" };
 type Params = Promise<Record<string, string | string[] | undefined>>;
-interface ShieldAction { action_id: string; action_type: string; explanation: string; interrupts: string[] }
-interface ShieldPath { path_id: string; criticality: number; nodes: string[]; observed_hops: number; hypothetical_hops: number; evidence: string[] }
-interface Counterfactual { label: string; feasible: boolean; disruptionCost: number; remainingExposure: number; explanation: string }
-interface ShieldResponse {
-  scenario: { name: string; summary: string; riskScore: number; threatClassification: string; affectedAssets: string[]; evidence: string[] };
-  recommendation: { businessDisruptionCost: number; selectedActions: ShieldAction[]; feasible: boolean; remainingCriticalPaths: string[] };
-  attackPaths: ShieldPath[];
-  counterfactuals: Counterfactual[];
-  candidateActions: { action_id: string; action_type: string; target: string; cost: number; reversible: boolean; approval_required: boolean; explanation: string }[];
-  solvers: Record<string, { solver: string; feasible: boolean; disruption_cost: number; objective: number; selected: string[] }>;
-  quantum: { backend?: string; qubitCount?: number; circuitDepth?: number; classicalOptimum?: number; qaoaObjective?: number; optimalityGap?: number; approximationRatio?: number; feasibleShotRate?: number; mostFrequentBitstring?: string; measuredBitstring?: string; disclosure: string; executionTimeMs: number; quboAudit?: { bitstringsChecked: number; energyMismatches: number; penaltyViolatingEncodings: number } };
-}
-
-async function load(id: string): Promise<ShieldResponse | null> {
-  const base = (process.env.SENTINEL_API_BASE_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
-  try {
-    const response = await fetch(`${base}/api/shield/scenarios/${encodeURIComponent(id)}`, { cache: "no-store" });
-    return response.ok ? response.json() as Promise<ShieldResponse> : null;
-  } catch { return null; }
-}
-
-const scenarioLinks = [
-  ["credential-compromise", "Credential Compromise"],
-  ["malicious-insider", "Malicious Insider"],
-  ["multiple-routes", "Multiple Routes"],
-];
-
 export default async function ShieldPage({ searchParams }: { searchParams: Params }) {
   const params = await searchParams;
   const sessionId = Array.isArray(params.session) ? params.session[0] : params.session;

@@ -157,6 +157,15 @@ export interface CertStatus {
   naturalPositiveRate: number; benchmark: Record<string, unknown>; runtimeBoundary: string; legacyDemo: string;
   availableEmployees: number; processedUserDays: number; dateCoverage: { start: string; end: string };
 }
+export interface CertMonthlyActivityPoint { month: string; login: number; file: number; removableMedia: number; email: number }
+export interface CertMonthlyActivity {
+  dataset: string; unit: string;
+  reportingPeriod: { start: string | null; end: string | null; months: number };
+  categories: { key: keyof Omit<CertMonthlyActivityPoint, "month">; label: string; source: string }[];
+  points: CertMonthlyActivityPoint[];
+  totals: Partial<Record<keyof Omit<CertMonthlyActivityPoint, "month">, number>>;
+  provenance: { available?: boolean; aggregation?: string; rawSources?: string[]; generatedAt?: string; httpExcluded?: string; reason?: string };
+}
 export interface CertIdentity { displayLabel: string; sourceId: string; monogram: string; source: string }
 export interface CertUserSummary { user: string; identity: CertIdentity; userDays: number; firstDate: string; lastDate: string; labelledMaliciousDays: number; activityTotals: { afterHoursLogons: number; usbConnections: number; filesCopied: number; emailsSent: number } }
 export interface CertUserDay { user: string; identity: CertIdentity; date: string; split: string; label: number; scenario: number; activity: { logons: number; afterHoursLogons: number; usbConnections: number; filesCopied: number; emailsSent: number; externalEmails: number } }

@@ -278,6 +278,7 @@ export const fixtureDataSource: SentinelDataSource = {
   },
   getQuantumOptimizationLatest: async () => null,
   getCertStatus: async () => ({ primaryDataset: "CERT r4.2 (live API required)", entitySchema: "employee user-day", featureSchema: ["pca_1", "pca_2", "pca_3", "pca_4"], processedDataReady: false, savedPreprocessingReady: false, qsvcArtifactReady: false, vqcArtifactReady: false, rbfSvmArtifactReady: false, assessmentPolicy: null, qsvcRole: "advisory", affectsProductionRisk: false, naturalPositiveRate: 0.002923, availableEmployees: 0, processedUserDays: 0, dateCoverage: { start: "unavailable", end: "unavailable" }, benchmark: {}, runtimeBoundary: "Fixture mode does not include CERT records.", legacyDemo: "Current fixture is retained for simulation only." }),
+  getCertMonthlyActivity: async () => ({ dataset: "CERT r4.2", unit: "raw telemetry events per calendar month", reportingPeriod: { start: null, end: null, months: 0 }, categories: [], points: [], totals: {}, provenance: { available: false, reason: "Live API required." } }),
   listCertUsers: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 } }),
   listCertUserDays: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 } }),
   listCertFindings: async () => ({ items: [], page: { page: 1, pageSize: 50, total: 0, totalPages: 1 }, scoringCoverage: 0, coverageBasis: "Live API required.", advisory: true }),

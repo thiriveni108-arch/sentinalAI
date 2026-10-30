@@ -55,6 +55,7 @@ class CertResearchService:
         summary = self._json(self.data_dir / "split_summary.json")
         metrics = self._json(self.results_dir / "metrics.json")
         model_ready = self.artifact_path.exists()
+        policy_validation_ready = (self.data_dir / "quantum_benchmark" / "qsvc" / "val.csv").exists()
         processed_ready = all((self.data_dir / f"{name}.csv").exists() for name in ("train", "validation", "test"))
         catalog = self._catalog() if processed_ready else pd.DataFrame(columns=["user", "date"])
         return {
@@ -66,7 +67,7 @@ class CertResearchService:
             "qsvcArtifactReady": model_ready,
             "vqcArtifactReady": self.vqc_artifact_path.exists(),
             "rbfSvmArtifactReady": model_ready and self._artifact(str(self.artifact_path)).get("classical_model") is not None,
-            "assessmentPolicy": self._assessment_policy() if model_ready and self.vqc_artifact_path.exists() else None,
+            "assessmentPolicy": self._assessment_policy() if model_ready and self.vqc_artifact_path.exists() and policy_validation_ready else None,
             "qsvcRole": "advisory",
             "affectsProductionRisk": False,
             "naturalPositiveRate": float(summary.get("overall", {}).get("overall_positive_rate", 0)) / 100.0,
@@ -76,6 +77,63 @@ class CertResearchService:
             "benchmark": metrics.get("metrics", {}).get("qsvc", {}),
             "runtimeBoundary": "CERT user-day inputs only; event-level SentinelAI quantum inputs are incompatible.",
             "legacyDemo": "Retained temporarily in SQLite and Attack Lab; it is not the primary research dataset.",
+        }
+
+    @lru_cache(maxsize=1)
+    def monthly_activity(self) -> dict[str, Any]:
+        """Return the precomputed, provenance-carrying raw telemetry aggregation."""
+        path = self.root / "data" / "processed" / "cert_monthly_activity.json"
+        if not path.exists():
+            return {
+                "dataset": "CERT Insider Threat r4.2", "unit": "raw telemetry events per calendar month",
+                "reportingPeriod": {"start": None, "end": None, "months": 0}, "categories": [], "points": [], "totals": {},
+                "provenance": {"available": False, "reason": "Monthly telemetry cache is not installed."},
+            }
+        payload = self._json(path)
+        payload.setdefault("provenance", {})["available"] = True
+        return payload
+
+    def quantum_diagnostics(self, incident: dict[str, Any]) -> dict[str, Any]:
+        """Bounded, read-only four-qubit diagnostics for one persisted incident."""
+        original = np.asarray([incident["originalEvidence"][name] for name in PCA_FEATURES], dtype=float)
+        injected = np.asarray([incident["injectedEvidence"][name] for name in PCA_FEATURES], dtype=float)
+        artifact = self._artifact(str(self.artifact_path))
+        qsvc_angles = artifact["input_scaler"].transform(np.vstack([original, injected]))
+        qsvc_states = np.asarray([self._state(row) for row in qsvc_angles])
+        fidelity = np.abs(qsvc_states @ qsvc_states.conj().T) ** 2
+
+        checkpoint = self._vqc_artifact(str(self.vqc_artifact_path))
+        span = np.where(checkpoint["scaler_max"] - checkpoint["scaler_min"] == 0, 1.0,
+                        checkpoint["scaler_max"] - checkpoint["scaler_min"])
+        vqc_angles = np.clip((injected - checkpoint["scaler_min"]) / span, 0.0, 1.0) * (2 * np.pi) - np.pi
+        device = qml.device("default.qubit", wires=4, shots=None)
+        @qml.qnode(device, interface=None, diff_method=None)
+        def state_circuit(features, weights):
+            qml.AngleEmbedding(features, wires=range(4), rotation="Y")
+            qml.StronglyEntanglingLayers(weights, wires=range(4), ranges=[1, 1])
+            return qml.state()
+        vqc_state = np.asarray(state_circuit(vqc_angles, checkpoint["weights"]), dtype=complex)
+        history_path = self.vqc_results_dir / "training_history.csv"
+        history = pd.read_csv(history_path).to_dict("records") if history_path.exists() else []
+        qsvc_gates = []
+        for wire in range(4):
+            qsvc_gates.extend([
+                {"id": f"q-h-{wire}", "gate": "H", "qubits": [wire], "stage": "superposition", "parameter": None},
+                {"id": f"q-ry-{wire}", "gate": "RY", "qubits": [wire], "stage": "data encoding", "parameter": float(qsvc_angles[1, wire])},
+                {"id": f"q-rz-{wire}", "gate": "RZ", "qubits": [wire], "stage": "data encoding", "parameter": float(.5 * qsvc_angles[1, wire])},
+            ])
+        for wire in range(4): qsvc_gates.append({"id": f"q-cz-{wire}", "gate": "CZ", "qubits": [wire, (wire + 1) % 4], "stage": "entanglement", "parameter": None})
+        for wire in range(4): qsvc_gates.append({"id": f"q-int-{wire}", "gate": "RY", "qubits": [wire], "stage": "interaction encoding", "parameter": float(qsvc_angles[1, wire] * qsvc_angles[1, (wire + 1) % 4] / np.pi)})
+        vqc_gates = [{"id": f"v-encode-{wire}", "gate": "RY", "qubits": [wire], "stage": "data encoding", "parameter": float(vqc_angles[wire])} for wire in range(4)]
+        for layer in range(2):
+            for wire in range(4):
+                vqc_gates.append({"id": f"v-rot-{layer}-{wire}", "gate": "Rot", "qubits": [wire], "stage": "trainable layer", "layer": layer, "parameters": [float(x) for x in checkpoint["weights"][layer, wire]]})
+            for wire in range(4): vqc_gates.append({"id": f"v-cnot-{layer}-{wire}", "gate": "CNOT", "qubits": [wire, (wire + 1) % 4], "stage": "entanglement", "layer": layer, "parameter": None})
+        return {
+            "incidentId": incident["incidentId"], "input": {"pca": injected.tolist(), "qsvcAngles": qsvc_angles[1].tolist(), "vqcAngles": vqc_angles.tolist()},
+            "qsvc": {"qubits": 4, "depth": 8, "gateCount": 20, "gates": qsvc_gates, "kernel": {"formula": "K(x,z) = |<phi(x)|phi(z)>|^2", "labels": ["original", "injected"], "similarity": fidelity.tolist()}, "stateProbabilities": (np.abs(qsvc_states[1]) ** 2).tolist()},
+            "vqc": {"qubits": 4, "layers": 2, "gates": vqc_gates, "weights": checkpoint["weights"].tolist(), "stateProbabilities": (np.abs(vqc_state) ** 2).tolist(), "trainingHistory": history, "measurement": "Mean Pauli-Z expectation across four wires"},
+            "disclosure": "Bounded exact statevector diagnostics on PennyLane default.qubit (shots=None); not physical hardware execution and not evidence of quantum advantage.",
         }
 
     def investigate(self, user: str, date: str, split: str = "test") -> dict[str, Any]:
@@ -227,9 +285,20 @@ class CertResearchService:
         return {"items": items, "page": self._page(page, page_size, total), "source": "recorded CERT user-day aggregates"}
 
     def list_findings(self, q: str = "", prediction: int | None = 1, page: int = 1, page_size: int = 50) -> dict[str, Any]:
-        cohort = pd.read_csv(self.data_dir / "quantum_benchmark" / "qsvc" / "test.csv")
-        predictions = pd.read_csv(self.results_dir / "predictions.csv")
-        vqc_predictions = pd.read_csv(self.vqc_results_dir / "predictions.csv")
+        cohort_path = self.data_dir / "quantum_benchmark" / "qsvc" / "test.csv"
+        qsvc_predictions_path = self.results_dir / "predictions.csv"
+        vqc_predictions_path = self.vqc_results_dir / "predictions.csv"
+        if not all(path.exists() for path in (cohort_path, qsvc_predictions_path, vqc_predictions_path)):
+            return {
+                "items": [],
+                "page": self._page(page, page_size, 0),
+                "scoringCoverage": 0,
+                "coverageBasis": "CERT benchmark cohort is not installed; persisted incidents remain available.",
+                "advisory": True,
+            }
+        cohort = pd.read_csv(cohort_path)
+        predictions = pd.read_csv(qsvc_predictions_path)
+        vqc_predictions = pd.read_csv(vqc_predictions_path)
         joined = pd.concat([cohort.reset_index(drop=True), predictions.reset_index(drop=True),
                             vqc_predictions[["vqc_score", "vqc_prediction"]].reset_index(drop=True)], axis=1)
         policy = self._assessment_policy()

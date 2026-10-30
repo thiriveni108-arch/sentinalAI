@@ -186,6 +186,14 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         try: return incidents.get(incident_id)
         except KeyError as error: raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
 
+    @app.get("/api/incidents/{incident_id}/quantum-diagnostics", response_model=dict[str, object])
+    def incident_quantum_diagnostics(incident_id: str) -> dict[str, object]:
+        """Run a bounded read-only four-qubit diagnostic for a persisted incident."""
+        try:
+            return cert.quantum_diagnostics(incidents.get(incident_id))
+        except KeyError as error:
+            raise HTTPException(404, {"code": "incident_not_found", "message": incident_id}) from error
+
     @app.post("/api/incidents/{incident_id}/shield", response_model=dict[str, object])
     def plan_incident_response(incident_id: str) -> dict[str, object]:
         try: return incidents.plan_response(incident_id)
@@ -235,6 +243,11 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     def cert_status() -> dict[str, object]:
         """Describe the primary CERT research dataset and frozen QSVC boundary."""
         return cert.status()
+
+    @app.get("/api/cert/analytics/monthly-activity", response_model=dict[str, object])
+    def cert_monthly_activity() -> dict[str, object]:
+        """Compact server-derived monthly telemetry counts; never returns raw CERT rows."""
+        return cert.monthly_activity()
 
     @app.get("/api/cert/user-days/{user}/{date}", response_model=dict[str, object])
     def cert_user_day(user: str, date: str, split: Literal["train", "validation", "test"] = "test") -> dict[str, object]:

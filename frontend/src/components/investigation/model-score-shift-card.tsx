@@ -1,0 +1,27 @@
+"use client";
+
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from "lucide-react";
+
+type Props = { model: string; kind: string; original: number; updated: number; threshold: number; inferenceMs: number; prediction: number; accent: "violet" | "indigo" | "cyan" };
+const ACCENTS = { violet: { strong: "#7c3aed", soft: "#ede9fe", glow: "rgba(124,58,237,.22)" }, indigo: { strong: "#4f46e5", soft: "#e0e7ff", glow: "rgba(79,70,229,.22)" }, cyan: { strong: "#0891b2", soft: "#cffafe", glow: "rgba(8,145,178,.22)" } };
+
+export function ModelScoreShiftCard({ model, kind, original, updated, threshold, inferenceMs, prediction, accent }: Props) {
+  const color = ACCENTS[accent]; const delta = updated - original;
+  const padding = Math.max(Math.abs(delta) * .28, Math.abs(threshold - original) * .12, .08);
+  const minimum = Math.min(original, updated, threshold) - padding; const maximum = Math.max(original, updated, threshold) + padding;
+  const position = (value: number) => 10 + ((value - minimum) / Math.max(maximum - minimum, Number.EPSILON)) * 80;
+  const beforeX = position(original); const afterX = position(updated); const thresholdX = position(threshold);
+  const direction = delta > 0 ? "Increased" : delta < 0 ? "Decreased" : "Unchanged";
+  const DirectionIcon = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : ArrowRight;
+  return <article className="score-shift-card group relative overflow-hidden rounded-2xl border border-border bg-white/80 p-4 shadow-[0_12px_32px_rgba(16,42,67,.055)] backdrop-blur-sm" style={{ "--shift-accent": color.strong, "--shift-soft": color.soft, "--shift-glow": color.glow } as React.CSSProperties}>
+    <div className="flex items-start justify-between gap-3"><div><div className="text-[12px] font-bold tracking-[.04em]">{model}</div><p className="mt-1 text-[9px] text-[var(--text-muted)]">{kind}</p></div><span className={`rounded-full px-2 py-1 text-[8px] font-bold ${prediction ? "bg-[var(--high)]/10 text-[var(--high)]" : "bg-[var(--low)]/10 text-[var(--low)]"}`}>{prediction ? "ALERT" : "CLEAR"}</span></div>
+    <div className="score-shift-visual relative mt-4 rounded-xl border border-border/70 bg-[linear-gradient(145deg,#fbfdff,#f8f7ff)] px-2 py-3" tabIndex={0} aria-label={`${model} raw decision score moved from ${original.toFixed(4)} to ${updated.toFixed(4)}. Threshold ${threshold.toFixed(4)}.`}>
+      <svg viewBox="0 0 100 52" className="h-[92px] w-full overflow-visible" role="img" aria-hidden="true"><line x1="10" x2="90" y1="29" y2="29" stroke="#dce5ed" strokeWidth="1"/><line x1={thresholdX} x2={thresholdX} y1="10" y2="43" stroke="#8799aa" strokeWidth=".75" strokeDasharray="2 2"/><text x={thresholdX} y="7" textAnchor="middle" fill="#71869a" fontSize="3.5">THRESHOLD {threshold.toFixed(3)}</text><line className="score-shift-path" x1={beforeX} x2={afterX} y1="29" y2="29" stroke={color.strong} strokeWidth="2.2" strokeLinecap="round" pathLength="1"/><circle cx={beforeX} cy="29" r="3.4" fill="white" stroke="#8799aa" strokeWidth="1.4"/><circle className="score-shift-endpoint" cx={afterX} cy="29" r="4.2" fill={color.strong} stroke="white" strokeWidth="1.5"/><text x={beforeX} y="41" textAnchor="middle" fill="#71869a" fontSize="3.8">ORIGINAL</text><text x={afterX} y="41" textAnchor="middle" fill={color.strong} fontSize="3.8" fontWeight="700">UPDATED</text><text x={beforeX} y="23" textAnchor="middle" fill="#50647a" fontSize="4.3" fontWeight="600">{original.toFixed(4)}</text><text x={afterX} y="20" textAnchor="middle" fill={color.strong} fontSize="4.7" fontWeight="700">{updated.toFixed(4)}</text></svg>
+      <div className="score-shift-tooltip pointer-events-none absolute left-1/2 top-1/2 z-10 w-[190px] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-white/98 p-3 text-[9px] opacity-0 shadow-[0_12px_30px_rgba(16,42,67,.16)] transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"><b>{model} score movement</b><dl className="mt-2 grid grid-cols-2 gap-y-1 text-[var(--text-muted)]"><dt>Original</dt><dd className="text-right font-mono text-foreground">{original.toFixed(5)}</dd><dt>Updated</dt><dd className="text-right font-mono text-foreground">{updated.toFixed(5)}</dd><dt>Shift</dt><dd className="text-right font-mono text-foreground">{formatDelta(delta)}</dd><dt>Inference</dt><dd className="text-right font-mono text-foreground">{inferenceMs.toFixed(3)} ms</dd></dl></div>
+    </div>
+    <div className="mt-3 grid grid-cols-3 gap-2"><Metric label="Original" value={original.toFixed(4)}/><Metric label="Updated" value={updated.toFixed(4)} emphasis/><Metric label="Shift" value={formatDelta(delta)} emphasis/></div>
+    <div className="mt-3 flex items-center justify-between border-t border-border/70 pt-3"><span className="flex items-center gap-1 text-[9px] font-semibold" style={{ color: color.strong }}><DirectionIcon className="size-3"/>{direction}</span><span className="font-mono text-[9px] text-[var(--text-muted)]">{inferenceMs.toFixed(3)} ms</span></div>
+  </article>;
+}
+function Metric({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) { return <div><span className="block text-[8px] uppercase tracking-[.1em] text-[var(--text-muted)]">{label}</span><strong className={`mt-1 block font-mono text-[11px] ${emphasis ? "text-[var(--shift-accent)]" : "text-[var(--text-secondary)]"}`}>{value}</strong></div>; }
+function formatDelta(value: number) { return `${value >= 0 ? "+" : ""}${value.toFixed(4)}`; }

@@ -1,5 +1,5 @@
 import "server-only";
-import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks, CertIncident, IncidentList } from "@/domain/sentinel";
+import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertMonthlyActivity, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks, CertIncident, IncidentList } from "@/domain/sentinel";
 
 import type { SentinelDataSource } from "@/data/sentinel-data-source";
 
@@ -190,6 +190,7 @@ export class HttpDataSource implements SentinelDataSource {
     }
   }
   getCertStatus() { return this.get<CertStatus>("/api/cert/status"); }
+  getCertMonthlyActivity() { return this.get<CertMonthlyActivity>("/api/cert/analytics/monthly-activity"); }
   listCertUsers(filters: { q?: string; page?: number; pageSize?: number } = {}) {
     return this.get<PageResult<CertUserSummary>>(`/api/cert/users${queryString({ q: filters.q, page: filters.page, page_size: filters.pageSize })}`);
   }

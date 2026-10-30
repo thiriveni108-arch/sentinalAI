@@ -1,0 +1,169 @@
+{
+  "dataset": "CERT Insider Threat r4.2",
+  "unit": "raw telemetry events per calendar month",
+  "reportingPeriod": {
+    "start": "2010-01",
+    "end": "2011-05",
+    "months": 17
+  },
+  "categories": [
+    {
+      "key": "login",
+      "label": "Logon activity",
+      "source": "logon.csv"
+    },
+    {
+      "key": "file",
+      "label": "File activity",
+      "source": "file.csv"
+    },
+    {
+      "key": "removableMedia",
+      "label": "Removable-media activity",
+      "source": "device.csv"
+    },
+    {
+      "key": "email",
+      "label": "Email activity",
+      "source": "email.csv"
+    }
+  ],
+  "points": [
+    {
+      "month": "2010-01",
+      "login": 53857,
+      "file": 28844,
+      "removableMedia": 26101,
+      "email": 162649
+    },
+    {
+      "month": "2010-02",
+      "login": 53093,
+      "file": 27748,
+      "removableMedia": 25048,
+      "email": 161178
+    },
+    {
+      "month": "2010-03",
+      "login": 60645,
+      "file": 31166,
+      "removableMedia": 28608,
+      "email": 184075
+    },
+    {
+      "month": "2010-04",
+      "login": 55110,
+      "file": 28432,
+      "removableMedia": 26121,
+      "email": 167445
+    },
+    {
+      "month": "2010-05",
+      "login": 52552,
+      "file": 27268,
+      "removableMedia": 25190,
+      "email": 159793
+    },
+    {
+      "month": "2010-06",
+      "login": 56714,
+      "file": 29006,
+      "removableMedia": 27043,
+      "email": 172606
+    },
+    {
+      "month": "2010-07",
+      "login": 53832,
+      "file": 28208,
+      "removableMedia": 26244,
+      "email": 164958
+    },
+    {
+      "month": "2010-08",
+      "login": 55362,
+      "file": 29068,
+      "removableMedia": 27207,
+      "email": 169664
+    },
+    {
+      "month": "2010-09",
+      "login": 52168,
+      "file": 27905,
+      "removableMedia": 25426,
+      "email": 160232
+    },
+    {
+      "month": "2010-10",
+      "login": 51682,
+      "file": 26404,
+      "removableMedia": 24106,
+      "email": 158394
+    },
+    {
+      "month": "2010-11",
+      "login": 48389,
+      "file": 25088,
+      "removableMedia": 22546,
+      "email": 149511
+    },
+    {
+      "month": "2010-12",
+      "login": 47207,
+      "file": 25322,
+      "removableMedia": 22105,
+      "email": 147922
+    },
+    {
+      "month": "2011-01",
+      "login": 48321,
+      "file": 24780,
+      "removableMedia": 22462,
+      "email": 151360
+    },
+    {
+      "month": "2011-02",
+      "login": 45709,
+      "file": 23521,
+      "removableMedia": 21221,
+      "email": 142399
+    },
+    {
+      "month": "2011-03",
+      "login": 51521,
+      "file": 26633,
+      "removableMedia": 23867,
+      "email": 161438
+    },
+    {
+      "month": "2011-04",
+      "login": 44403,
+      "file": 23526,
+      "removableMedia": 20809,
+      "email": 140296
+    },
+    {
+      "month": "2011-05",
+      "login": 24294,
+      "file": 12662,
+      "removableMedia": 11276,
+      "email": 76059
+    }
+  ],
+  "totals": {
+    "login": 854859,
+    "file": 445581,
+    "removableMedia": 405380,
+    "email": 2629979
+  },
+  "provenance": {
+    "aggregation": "Exact row counts grouped by the source event timestamp month; header rows excluded.",
+    "rawSources": [
+      "logon.csv",
+      "file.csv",
+      "device.csv",
+      "email.csv"
+    ],
+    "generatedAt": "2026-10-30T13:22:33.655129+00:00",
+    "httpExcluded": "HTTP telemetry is not included because it is not represented by the prepared behavioural feature schema used by SentinelAI-Q."
+  }
+}

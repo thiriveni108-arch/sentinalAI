@@ -24,6 +24,7 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/cert_monthly_activity.json
 !data/processed/shield_downstream_v1/
 !data/processed/shield_downstream_v1/model_table.parquet
 !data/processed/shield_downstream_v1/rollout_transitions.parquet
@@ -53,3 +54,7 @@ artifacts/reports/*
 
 # Local development service output
 .*-local*.log
+.backend-run*.log
+.frontend-run*.log
+.frontend-live*.log
+.pytest-dashboard*/
