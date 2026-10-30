@@ -12,7 +12,7 @@ export function MotionSurface({ children }: { children: ReactNode }) {
   }
   function move(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== "mouse" || window.matchMedia("(prefers-reduced-motion: reduce), (max-width: 900px)").matches) return;
-    const target = (event.target as HTMLElement).closest<HTMLElement>(".tilt-card, .magnetic, .prism-hero");
+    const target = (event.target as HTMLElement).closest<HTMLElement>(".tilt-card, .magnetic, .prism-hero, .panel:not(.spotlight-card)");
     if (active.current !== target) reset();
     if (!target) return;
     active.current = target;

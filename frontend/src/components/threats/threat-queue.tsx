@@ -11,7 +11,7 @@ export function ThreatQueue({ threats, compact = false, focusedId }: { threats: 
   }
 
   return (
-    <div className="panel overflow-hidden">
+    <div className="interactive-data-table panel overflow-hidden">
       <div className="scrollbar-thin overflow-x-auto">
         <table className="w-full min-w-[960px] table-fixed border-collapse text-left">
           <caption className="sr-only">{compact ? "Highest-risk active alerts" : "Filtered active alert queue"}</caption>
@@ -28,7 +28,7 @@ export function ThreatQueue({ threats, compact = false, focusedId }: { threats: 
               const occurred = formatThreatTimestamp(threat.occurredAt);
               const focused = threat.alertId === focusedId;
               return (
-                <tr id={threat.alertId} key={threat.alertId} className={cn("h-16 transition-colors hover:bg-[var(--surface-hover)]", focused && "bg-[var(--surface-selected)]")}>
+                <tr id={threat.alertId} key={threat.alertId} className={cn("h-16 transition-colors hover:bg-[var(--surface-hover)]", threat.riskLevel === "Critical" && "critical-threat-row", threat.riskLevel === "High" && "high-threat-row", focused && "bg-[var(--surface-selected)]")}>
                   <td className="px-3 py-2 align-middle"><ThreatSeverity level={threat.riskLevel} /></td>
                   <th scope="row" className="min-w-0 px-3 py-2 align-middle font-normal">
                     <Link aria-current={focused ? "location" : undefined} href={`/threats?focus=${encodeURIComponent(threat.alertId)}#${encodeURIComponent(threat.alertId)}`} className="block rounded-sm text-[12px] font-semibold text-foreground hover:text-[var(--accent-strong)] focus-visible:text-[var(--accent-strong)]">

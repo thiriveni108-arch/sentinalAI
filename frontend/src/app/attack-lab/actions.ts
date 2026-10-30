@@ -53,7 +53,7 @@ export async function evaluateLinkedShield(formData: FormData) {
   if(!incidentId) redirect("/threat-investigation?error=incident_required");
   try {
     await getSentinelDataSource().createLinkedShieldSession(incidentId,topology);
-    redirect(`/shield?session=${encodeURIComponent(incidentId)}`);
+    redirect(`/response-automation?session=${encodeURIComponent(incidentId)}`);
   } catch(error) {
     if(error instanceof SentinelApiError) redirect(`/threat-investigation?incident=${encodeURIComponent(incidentId)}&error=${encodeURIComponent(error.code)}`);
     throw error;

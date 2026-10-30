@@ -7,7 +7,7 @@ import { ThreatSeverity } from "@/components/threats/threat-severity";
 export function UserTable({ items }: { items: UserSummary[] }) {
   if (!items.length) return <div className="panel px-5 py-12 text-center text-[12px] text-[var(--text-muted)]">No users match the current filters.</div>;
   return (
-    <div className="panel overflow-x-auto scrollbar-thin">
+    <div className="interactive-data-table panel overflow-x-auto scrollbar-thin">
       <table className="w-full min-w-[820px] border-collapse text-left">
         <caption className="sr-only">SentinelAI monitored users</caption>
         <thead className="border-b border-border bg-[var(--surface-elevated)] text-[9px] uppercase tracking-[0.1em] text-[var(--text-muted)]"><tr><th scope="col" className="px-3 py-2.5">User</th><th scope="col" className="px-3 py-2.5">Peer group</th><th scope="col" className="px-3 py-2.5">Latest risk</th><th scope="col" className="px-3 py-2.5">Activity</th><th scope="col" className="px-3 py-2.5">Alerts</th><th scope="col" className="px-3 py-2.5">Baseline</th><th scope="col"><span className="sr-only">Open user</span></th></tr></thead>

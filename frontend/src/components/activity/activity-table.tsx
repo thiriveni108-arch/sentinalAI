@@ -9,7 +9,7 @@ function timestamp(value: string) { return new Intl.DateTimeFormat("en-GB", { da
 export function ActivityTable({ items }: { items: ActivityRecord[] }) {
   if (!items.length) return <div className="panel px-5 py-12 text-center text-[12px] text-[var(--text-muted)]">No activity matches the current filters.</div>;
   return (
-    <div className="panel overflow-x-auto scrollbar-thin">
+    <div className="interactive-data-table panel overflow-x-auto scrollbar-thin">
       <table className="w-full min-w-[940px] border-collapse text-left">
         <caption className="sr-only">Persisted SentinelAI activity events</caption>
         <thead className="border-b border-border bg-[var(--surface-elevated)] text-[9px] uppercase tracking-[0.1em] text-[var(--text-muted)]">

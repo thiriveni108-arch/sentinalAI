@@ -11,8 +11,8 @@ const primary = [
   { href: "/", label: "Command Center", icon: LayoutDashboard },
   { href: "/threat-investigation", label: "Threat Investigation", icon: SearchCheck },
   { href: "/attack-lab", label: "Adversary Lab", icon: FlaskConical },
-  { href: "/shield", label: "SHIELD Intelligence", icon: ShieldCheck },
-  { href: "/response-automation", label: "Response Automation", icon: Workflow },
+  { href: "/shield", label: "Response Analysis", icon: ShieldCheck },
+  { href: "/response-automation", label: "Response Center", icon: Workflow },
   { href: "/simulation", label: "Model Observatory", icon: Telescope },
 ];
 const plannedIcons: Record<PlannedModuleSlug, LucideIcon> = {
@@ -27,7 +27,7 @@ export function SidebarNav({ compact = false }: { compact?: boolean }) {
       {primary.map(({ href, label, icon: Icon }) => {
         const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
         return (
-          <Link key={href} href={session ? `${href}?session=${encodeURIComponent(session)}` : href} aria-current={active ? "page" : undefined} className={cn(
+          <Link key={href} href={linkedHref(href,session)} aria-current={active ? "page" : undefined} className={cn(
             "flex items-center gap-3 border-transparent text-[12px] font-medium transition-all hover:translate-x-0.5 focus-visible:z-10",
             compact ? "border-b-2 px-3" : "h-10 rounded-lg border-l-2 px-3",
             active ? "border-[var(--accent)] bg-[var(--surface-selected)] font-semibold text-foreground" : "text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] hover:text-foreground",
@@ -67,4 +67,10 @@ export function SidebarNav({ compact = false }: { compact?: boolean }) {
       })}
     </nav>
   );
+}
+
+function linkedHref(href:string,session:string|null){
+  if(!session||href==="/attack-lab")return href;
+  if(href==="/threat-investigation")return `${href}?incident=${encodeURIComponent(session)}&session=${encodeURIComponent(session)}`;
+  return `${href}?session=${encodeURIComponent(session)}`;
 }
