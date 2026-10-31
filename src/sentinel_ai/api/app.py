@@ -75,6 +75,7 @@ from sentinel_ai.response.service import ResponseActionFailed
 from sentinel_ai.quantum import QuantumAnalyzer
 from sentinel_ai.cert import CertResearchService
 from sentinel_ai.incidents import IncidentService
+from sentinel_ai.api.demo_security import enforce_public_demo_boundary, validated_demo_secret
 
 
 logger = logging.getLogger(__name__)
@@ -133,6 +134,7 @@ Service = Annotated[SentinelService, Depends(_service)]
 def create_app(database_path: str | Path | None = None, bootstrap_demo_data: bool | None = None) -> FastAPI:
     resolved_database_path = Path(database_path or os.environ.get("SENTINEL_DATABASE_PATH", config.DEFAULT_DATABASE_PATH))
     bootstrap_enabled = _demo_bootstrap_enabled(bootstrap_demo_data)
+    demo_secret = validated_demo_secret()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -148,6 +150,11 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
         yield
 
     app = FastAPI(title="SentinelAI API", version="0.1.0", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def public_demo_boundary(request: Request, call_next):
+        return await enforce_public_demo_boundary(request, call_next, demo_secret)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://127.0.0.1:3000", "http://localhost:3000"],
@@ -424,17 +431,17 @@ def create_app(database_path: str | Path | None = None, bootstrap_demo_data: boo
     @app.get("/api/shield/learning/policies", response_model=dict[str, object])
     def learning_policies() -> dict[str, object]: return {"active":learning.registry.active_name,"policies":{name:{k:v for k,v in entry.items() if k!="policy"} for name,entry in learning.registry.entries.items()}}
 
-    @app.post("/api/shield/learning/policies/{name}/approve", response_model=dict[str, object])
-    def approve_learning_policy(name:str, _actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
-        learning.registry.approve_for_simulation(name,_actor,"model_governor"); return learning.registry.get(name)
+    @app.post("/api/shield/learning/policies/{name}/approve", response_model=dict[str, object], dependencies=[Depends(require_model_governance)])
+    def approve_learning_policy(name:str) -> dict[str, object]:
+        learning.registry.approve_for_simulation(name,"server-validated-model-governor","model_governor"); return learning.registry.get(name)
 
-    @app.post("/api/shield/learning/policies/{name}/activate", response_model=dict[str, object])
-    def activate_learning_policy(name:str, _actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
-        learning.registry.activate(name,_actor,"model_governor"); return {"active":learning.registry.active_name,"policy":learning.registry.get(name)}
+    @app.post("/api/shield/learning/policies/{name}/activate", response_model=dict[str, object], dependencies=[Depends(require_model_governance)])
+    def activate_learning_policy(name:str) -> dict[str, object]:
+        learning.registry.activate(name,"server-validated-model-governor","model_governor"); return {"active":learning.registry.active_name,"policy":learning.registry.get(name)}
 
-    @app.post("/api/shield/learning/policies/rollback", response_model=dict[str, object])
-    def rollback_learning_policy(_actor:Annotated[str,Depends(require_model_governance)]) -> dict[str, object]:
-        active,previous=learning.registry.rollback(_actor,"model_governor"); return {"rolled_back":active,"active":previous}
+    @app.post("/api/shield/learning/policies/rollback", response_model=dict[str, object], dependencies=[Depends(require_model_governance)])
+    def rollback_learning_policy() -> dict[str, object]:
+        active,previous=learning.registry.rollback("server-validated-model-governor","model_governor"); return {"rolled_back":active,"active":previous}
 
     @app.exception_handler(HTTPException)
     async def http_error(_request: Request, error: HTTPException) -> JSONResponse:

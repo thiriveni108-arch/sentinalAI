@@ -4,9 +4,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ShieldPlan, UnifiedShieldSession } from "@/domain/unified-incident";
 
-const apiBase=(process.env.NEXT_PUBLIC_SENTINEL_API_BASE_URL ?? "").replace(/\/$/,"");
 async function request<T>(path:string,body?:object):Promise<T>{
-  const response=await fetch(`${apiBase}${path}`,{method:body?"POST":"GET",headers:body?{"content-type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined,cache:"no-store"});
+  const response=await fetch(path,{method:body?"POST":"GET",headers:body?{"content-type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined,cache:"no-store"});
   const data=await response.json().catch(()=>({}));
   if(!response.ok) throw new Error(data?.error?.message ?? data?.detail?.message ?? "The simulator service could not complete this request.");
   return data as T;

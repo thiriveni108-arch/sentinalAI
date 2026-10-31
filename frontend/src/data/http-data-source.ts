@@ -2,6 +2,7 @@ import "server-only";
 import type { ActivityFilters, ActivityRecord, AttackLabRun, AttackLabScenario, CreateAttackLabRun, ModelEvaluationReport, ModelMetadata, OperationsOverview, PageResult, QuantumEvaluationReport, QuantumStatus, QuantumEventAnalysis, SystemCounts, SystemStatusSnapshot, ThreatFilters, ThreatSummary, UserDetail, UserFilters, UserSummary, GraphOverview, GraphEntityDetail, GraphEventContext, GraphAttackRunContext, GraphFinding, GraphData, GraphFilters, MitreCatalog, MitreOverview, MitreReport, ContainmentState, ResponseHistory, QaoaOptimizationStatus, QaoaOptimizationResult, CertStatus, CertMonthlyActivity, CertUserSummary, CertUserDay, CertFinding, CertInvestigation, CertReplay, CertBenchmarks, CertIncident, IncidentList } from "@/domain/sentinel";
 
 import type { SentinelDataSource } from "@/data/sentinel-data-source";
+import { backendHeaders } from "@/data/backend-auth";
 
 interface ApiErrorDocument { error?: { code?: string; message?: string } }
 
@@ -26,7 +27,7 @@ export class HttpDataSource implements SentinelDataSource {
   constructor(private readonly baseUrl: string) {}
 
   private async get<T>(path: string): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, { cache: "no-store", headers: { accept: "application/json" } });
+    const response = await fetch(`${this.baseUrl}${path}`, { cache: "no-store", headers: backendHeaders() });
     if (!response.ok) {
       const document = await response.json().catch(() => ({})) as ApiErrorDocument;
       throw new SentinelApiError(response.status, document.error?.code ?? "api_error", document.error?.message ?? `SentinelAI API returned ${response.status}.`);
@@ -35,7 +36,7 @@ export class HttpDataSource implements SentinelDataSource {
   }
 
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${path}`, { method: "POST", cache: "no-store", headers: { accept: "application/json", "content-type": "application/json" }, body: JSON.stringify(body) });
+    const response = await fetch(`${this.baseUrl}${path}`, { method: "POST", cache: "no-store", headers: backendHeaders(true), body: JSON.stringify(body) });
     if (!response.ok) {
       const document = await response.json().catch(() => ({})) as ApiErrorDocument;
       throw new SentinelApiError(response.status, document.error?.code ?? "api_error", document.error?.message ?? `SentinelAI API returned ${response.status}.`);

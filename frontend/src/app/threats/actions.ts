@@ -1,6 +1,7 @@
 "use server";
 
 import type { ContainmentState, ResponseAction, ResponseHistory } from "@/domain/sentinel";
+import { backendHeaders, publicDemoMode } from "@/data/backend-auth";
 
 export interface ContainmentActionInput {
   employeeId: string;
@@ -31,6 +32,7 @@ export async function performContainmentAction(input: ContainmentActionInput): P
   if (process.env.SENTINEL_DATA_SOURCE?.toLowerCase() !== "http") {
     return { ok: false, error: "Containment actions require the live SentinelAI API." };
   }
+  if (publicDemoMode()) return { ok: false, error: "Containment actions are disabled in public demo mode." };
 
   const baseUrl = (process.env.SENTINEL_API_BASE_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
   const employeeId = encodeURIComponent(input.employeeId);
@@ -38,14 +40,14 @@ export async function performContainmentAction(input: ContainmentActionInput): P
     const response = await fetch(`${baseUrl}/api/response/users/${employeeId}/${endpoints[input.action]}`, {
       method: "POST",
       cache: "no-store",
-      headers: { accept: "application/json", "content-type": "application/json" },
+      headers: backendHeaders(true),
       body: JSON.stringify({ alertId: input.alertId, reason, actor: "Analyst" }),
     });
     const document = await response.json().catch(() => ({})) as { state?: ContainmentState; error?: { message?: string } };
     if (!response.ok || !document.state) {
       return { ok: false, error: document.error?.message ?? "Containment action could not be completed." };
     }
-    const historyResponse = await fetch(`${baseUrl}/api/response/users/${employeeId}/history`, { cache: "no-store" });
+    const historyResponse = await fetch(`${baseUrl}/api/response/users/${employeeId}/history`, { cache: "no-store", headers: backendHeaders() });
     const history = historyResponse.ok ? await historyResponse.json() as ResponseHistory : { items: [] };
     return { ok: true, state: document.state, history };
   } catch {
